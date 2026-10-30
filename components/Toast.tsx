@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleCheck, Info, TriangleAlert } from "lucide-react";
 import { createContext, useCallback, useContext, useState } from "react";
 
 type Kind = "info" | "success" | "error";
@@ -23,7 +24,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div className="toasts" role="status" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className="toast" data-kind={t.kind}>
-            <span aria-hidden="true">{t.kind === "success" ? "✅" : t.kind === "error" ? "⚠️" : "✨"}</span>
+            <span className="toast-icon" aria-hidden="true">{t.kind === "success" ? <CircleCheck size={18} /> : t.kind === "error" ? <TriangleAlert size={18} /> : <Info size={18} />}</span>
             {t.text}
           </div>
         ))}

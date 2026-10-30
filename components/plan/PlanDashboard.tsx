@@ -1,20 +1,24 @@
 "use client";
 
+import { ArrowRight, CalendarPlus, Mail, Pencil, Printer, Share2, Trash, TriangleAlert, WandSparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Tilt from "../Tilt";
 import { useToast } from "../Toast";
 import BudgetPanel, { BudgetDonut } from "./BudgetPanel";
-import { IdeasPanel, TimelinePanel, VendorsPanel } from "./Panels";
+import { IdeasPanel, SchedulePanel, StayPanel, TimelinePanel, VendorsPanel } from "./Panels";
+import VenuesPanel from "./VenuesPanel";
 import { requestPlan } from "@/lib/api";
 import { EVENT_META } from "@/lib/events";
-import { daysUntil, formatDate, formatINR, todayIso } from "@/lib/format";
+import { daysUntil, formatDate, formatDateRange, formatINR, todayIso } from "@/lib/format";
 import { buildIcs, taskDate } from "@/lib/ics";
 import { carryProgress } from "@/lib/progress";
 import { encodeShare } from "@/lib/share";
 import type { SavedPlan } from "@/lib/store";
 
-const TABS = ["Overview", "Budget", "Timeline", "Vendors", "Ideas"] as const;
+const TABS = ["Overview", "Schedule", "Venues", "Budget", "Timeline", "Vendors", "Ideas"] as const;
 type Tab = (typeof TABS)[number];
+// Display names; the plain ids above stay stable for element ids and state.
+const TAB_LABEL: Record<Tab, string> = { Overview: "Overview", Schedule: "Functions", Venues: "Venues", Budget: "Budget", Timeline: "Tasks", Vendors: "Vendors", Ideas: "Ideas" };
 const REFINE_SUGGESTIONS = ["Cut the budget by 20%", "Make it eco-friendly", "Add a kids' corner", "More traditional", "Make it a home event", "Add live music"];
 
 function download(filename: string, text: string, type: string) {
@@ -32,15 +36,29 @@ interface Props {
   /** Shown above the header, e.g. "save a copy" for shared plans. */
   banner?: React.ReactNode;
   onDelete?: () => void;
+  /** Link to the invitation studio; omitted for unsaved (shared) plans. */
+  inviteHref?: string;
+  /** Link to edit the plan's details and regenerate it; omitted for unsaved (shared) plans. */
+  editHref?: string;
 }
 
-export default function PlanDashboard({ saved, onChange, banner, onDelete }: Props) {
-  const { input, plan } = saved;
+export default function PlanDashboard({ saved, onChange, banner, onDelete, inviteHref, editHref }: Props) {
+  const { input } = saved;
+  // Plans saved before schedules / venue types existed lack those fields.
+  const plan = {
+    ...saved.plan,
+    schedule: saved.plan.schedule ?? [],
+    venueTypes: saved.plan.venueTypes ?? [],
+    plannerNote: saved.plan.plannerNote ?? "",
+    stay: saved.plan.stay ?? null,
+  };
+  const eventDays = input.days ?? 1;
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("Overview");
   const [refineOpen, setRefineOpen] = useState(false);
   const [refineText, setRefineText] = useState("");
   const [refining, setRefining] = useState(false);
+  const [ideating, setIdeating] = useState(false);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const refineInput = useRef<HTMLTextAreaElement>(null);
 
@@ -82,7 +100,7 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete }: Pro
     }
   };
 
-  async function refine(instruction: string) {
+  async function refine(instruction: string, done = "Plan updated.") {
     if (!instruction.trim()) return;
     setRefining(true);
     try {
@@ -90,11 +108,39 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete }: Pro
       change((cur) => ({ ...cur, plan: carryProgress(cur.plan, res.plan), input: { ...cur.input, budget: res.budget }, source: res.source }));
       setRefineOpen(false);
       setRefineText("");
-      toast("Plan updated.", "success");
+      toast(done, "success");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Couldn't update the plan.", "error");
     } finally {
       setRefining(false);
+    }
+  }
+
+  /** Re-plans a single function, leaving the rest of the plan as it is. */
+  const replanFunction = (item: { title: string; day: number }, how: string) =>
+    refine(
+      `Rework only the "${item.title}" function on day ${item.day}: ${how}. Update its time, guests, theme, decor, food, music and dress code to match, ` +
+        `and adjust the budget only if this change needs it. Keep every other function and the rest of the plan unchanged.`,
+      `${item.title} re-planned.`,
+    );
+
+  /** Adds a fresh batch of ideas (optionally in one category) without touching anything else. */
+  async function moreIdeas(focus: string) {
+    setIdeating(true);
+    try {
+      const res = await fetch("/api/ideas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input, existing: plan.ideas.map((i) => i.title), focus }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Couldn't come up with more ideas.");
+      update((p) => ({ ideas: [...p.ideas, ...(data.ideas ?? [])] }));
+      toast(`${(data.ideas ?? []).length} new ideas added.`, "success");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Couldn't come up with more ideas.", "error");
+    } finally {
+      setIdeating(false);
     }
   }
 
@@ -107,7 +153,8 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete }: Pro
   };
 
   const counts: Partial<Record<Tab, string>> = {
-    Budget: String(plan.budget.length),
+    Schedule: String(plan.schedule.filter((s) => s.theme || s.decor).length || plan.schedule.length),
+    Venues: plan.venueTypes.length ? String(plan.venueTypes.length) : undefined,
     Timeline: `${tasksDone}/${plan.timeline.length}`,
     Vendors: `${vendorsDone}/${plan.vendors.length}`,
     Ideas: String(plan.ideas.length + plan.customs.length),
@@ -119,31 +166,33 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete }: Pro
       <div className="dash-head">
         <div style={{ flex: "1 1 420px" }}>
           <div className="row">
-            <span className="badge badge-accent">{meta.emoji} {meta.label}</span>
+            <span className="badge badge-accent"><meta.icon size={14} aria-hidden="true" /> {meta.label}</span>
             {saved.source === "sample" && <span className="badge badge-warn">Sample: no API key configured</span>}
           </div>
           <h1>{plan.title}</h1>
           <p className="muted" style={{ margin: 0 }}>
-            {formatDate(input.date)} · {input.city} · {input.guests} guests
+            {formatDateRange(input.date, eventDays)}{eventDays > 1 ? ` (${eventDays} days)` : ""} · {input.city} · {input.guests} guests
           </p>
         </div>
         <div className="row no-print">
-          <button type="button" className="btn btn-primary" onClick={() => setRefineOpen(true)}>✦ Refine with AI</button>
-          <button type="button" className="btn" onClick={share}>🔗 Share</button>
-          <button type="button" className="btn btn-icon" title="Add timeline to calendar" aria-label="Download calendar file (.ics)" onClick={() => { download(`${slug}.ics`, buildIcs(plan.title, input.date, plan.timeline), "text/calendar"); toast("Calendar file downloaded. Open it to add the tasks.", "success"); }}>🗓️</button>
-          <button type="button" className="btn btn-icon" title="Print or save as PDF" aria-label="Print or save as PDF" onClick={() => window.print()}>🖨️</button>
-          {onDelete && <button type="button" className="btn btn-icon btn-danger" title="Delete plan" aria-label="Delete plan" onClick={onDelete}>🗑️</button>}
+          {editHref && <a className="btn" href={editHref}><Pencil size={16} aria-hidden="true" /> Edit details</a>}
+          <button type="button" className="btn btn-primary" onClick={() => setRefineOpen(true)}><WandSparkles size={17} aria-hidden="true" /> Refine with AI</button>
+          {inviteHref && <a className="btn" href={inviteHref}><Mail size={17} aria-hidden="true" /> Invitation</a>}
+          <button type="button" className="btn" onClick={share}><Share2 size={17} aria-hidden="true" /> Share</button>
+          <button type="button" className="btn btn-icon" title="Add timeline to calendar" aria-label="Download calendar file (.ics)" onClick={() => { download(`${slug}.ics`, buildIcs(plan.title, input.date, plan.timeline, new Date(), plan.schedule), "text/calendar"); toast("Calendar file downloaded. Open it to add the tasks.", "success"); }}><CalendarPlus size={18} aria-hidden="true" /></button>
+          <button type="button" className="btn btn-icon" title="Print or save as PDF" aria-label="Print or save as PDF" onClick={() => window.print()}><Printer size={18} aria-hidden="true" /></button>
+          {onDelete && <button type="button" className="btn btn-icon btn-danger" title="Delete plan" aria-label="Delete plan" onClick={onDelete}><Trash size={18} aria-hidden="true" /></button>}
         </div>
       </div>
 
       <div className="stat-grid">
         {[
-          { k: "Countdown", v: days > 0 ? `${days} days` : days === 0 ? "Today! 🎉" : "Done", s: formatDate(input.date) },
+          { k: "Countdown", v: days > 0 ? `${days} days` : days === 0 ? "Today" : "Done", s: formatDateRange(input.date, eventDays) },
           { k: "Budget", v: formatINR(input.budget), s: `${formatINR(input.guests ? Math.round(input.budget / input.guests) : 0)} per guest` },
-          { k: "Tasks", v: `${tasksDone}/${plan.timeline.length}`, s: tasksDone === plan.timeline.length ? "All done ✓" : "on the timeline" },
-          { k: "Vendors", v: `${vendorsDone}/${plan.vendors.length}`, s: "booked" },
+          { k: "Tasks done", v: `${tasksDone}/${plan.timeline.length}`, s: tasksDone === plan.timeline.length ? "All complete" : "on the timeline" },
+          { k: "Vendors booked", v: `${vendorsDone}/${plan.vendors.length}`, s: "booked" },
         ].map((st) => (
-          <Tilt key={st.k} className="card stat" max={10}>
+          <Tilt key={st.k} className="card stat" max={4}>
             <div className="pop-sm">
               <div className="k">{st.k}</div>
               <div className="v">{st.v}</div>
@@ -168,7 +217,7 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete }: Pro
             onClick={() => setTab(t)}
             onKeyDown={(e) => onTabKey(e, i)}
           >
-            {t}
+            {TAB_LABEL[t]}
             {counts[t] && <span className="count">{counts[t]}</span>}
           </button>
         ))}
@@ -176,13 +225,19 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete }: Pro
 
       {/* All panels stay in the DOM (hidden) so printing includes every section. */}
       <div role="tabpanel" id="panel-Overview" aria-labelledby="tab-Overview" hidden={tab !== "Overview"} className="tab-panel">
+        {plan.plannerNote && (
+          <section className="card planner-note" style={{ marginBottom: 20 }} aria-label="A note from your planner">
+            <span className="eyebrow">From your planner</span>
+            <p>{plan.plannerNote}</p>
+          </section>
+        )}
         <div className="two-col">
           <section className="card">
             <h3>Summary</h3>
             <p className="muted">{plan.summary}</p>
             {plan.risks.length > 0 && (
               <div className="alert alert-warn" style={{ marginTop: 16 }}>
-                <span aria-hidden="true">⚠️</span>
+                <TriangleAlert size={20} aria-hidden="true" style={{ flex: "none" }} />
                 <div>
                   <strong>Watch out for</strong>
                   <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
@@ -196,7 +251,7 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete }: Pro
             <div className="row">
               <h3 style={{ margin: 0 }}>Budget at a glance</h3>
               <span className="spacer" />
-              <button type="button" className="btn btn-sm btn-ghost no-print" onClick={() => setTab("Budget")}>Edit →</button>
+              <button type="button" className="btn btn-sm btn-ghost no-print" onClick={() => setTab("Budget")}>Edit <ArrowRight size={14} aria-hidden="true" /></button>
             </div>
             <BudgetDonut items={plan.budget} size="compact" />
           </section>
@@ -205,10 +260,10 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete }: Pro
           <div className="row">
             <h3 style={{ margin: 0 }}>Up next</h3>
             <span className="spacer" />
-            <button type="button" className="btn btn-sm btn-ghost no-print" onClick={() => setTab("Timeline")}>Full timeline →</button>
+            <button type="button" className="btn btn-sm btn-ghost no-print" onClick={() => setTab("Timeline")}>All tasks <ArrowRight size={14} aria-hidden="true" /></button>
           </div>
           {upcoming.length === 0 ? (
-            <p className="muted" style={{ marginTop: 12 }}>Every task is done. Enjoy the celebration! 🎉</p>
+            <p className="muted" style={{ marginTop: 12 }}>Every task is complete. Enjoy the celebration.</p>
           ) : (
             <ul className="legend" style={{ marginTop: 12 }}>
               {upcoming.map((t, i) => {
@@ -224,6 +279,23 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete }: Pro
             </ul>
           )}
         </section>
+      </div>
+
+      <div role="tabpanel" id="panel-Schedule" aria-labelledby="tab-Schedule" hidden={tab !== "Schedule"} className="tab-panel">
+        <SchedulePanel
+          start={input.date}
+          days={eventDays}
+          schedule={plan.schedule}
+          busy={refining}
+          onChange={(schedule) => update(() => ({ schedule }))}
+          onReplan={replanFunction}
+        />
+      </div>
+
+      {/* The map iframe only mounts when the tab is opened, so it costs nothing until needed. */}
+      <div role="tabpanel" id="panel-Venues" aria-labelledby="tab-Venues" hidden={tab !== "Venues"} className="tab-panel no-print">
+        {tab === "Venues" && <VenuesPanel city={input.city} eventType={input.eventType} venueTypes={plan.venueTypes} />}
+        {plan.stay && <div style={{ marginTop: 20 }}><StayPanel stay={plan.stay} city={input.city} /></div>}
       </div>
 
       <div role="tabpanel" id="panel-Budget" aria-labelledby="tab-Budget" hidden={tab !== "Budget"} className="tab-panel">
@@ -246,12 +318,15 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete }: Pro
       <div role="tabpanel" id="panel-Vendors" aria-labelledby="tab-Vendors" hidden={tab !== "Vendors"} className="tab-panel">
         <VendorsPanel
           vendors={plan.vendors}
+          city={input.city}
+          occasion={meta.label.toLowerCase()}
           onToggle={(i) => update((p) => ({ vendors: p.vendors.map((v, n) => (n === i ? { ...v, done: !v.done } : v)) }))}
+          onShortlist={(i, shortlist) => update((p) => ({ vendors: p.vendors.map((v, n) => (n === i ? { ...v, shortlist } : v)) }))}
         />
       </div>
 
       <div role="tabpanel" id="panel-Ideas" aria-labelledby="tab-Ideas" hidden={tab !== "Ideas"} className="tab-panel">
-        <IdeasPanel ideas={plan.ideas} customs={plan.customs} />
+        <IdeasPanel ideas={plan.ideas} customs={plan.customs} onMore={moreIdeas} busy={ideating} />
       </div>
 
       {refineOpen && (
@@ -259,20 +334,20 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete }: Pro
           <div className="drawer-backdrop" onClick={() => !refining && setRefineOpen(false)} />
           <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="refine-h">
             <div className="row">
-              <h2 id="refine-h" style={{ fontSize: "1.4rem", margin: 0 }}>✦ Refine your plan</h2>
+              <h2 id="refine-h" style={{ fontSize: "1.5rem", margin: 0 }}>Refine your plan</h2>
               <span className="spacer" />
-              <button type="button" className="btn btn-ghost btn-icon" aria-label="Close" disabled={refining} onClick={() => setRefineOpen(false)}>✕</button>
+              <button type="button" className="btn btn-ghost btn-icon" aria-label="Close" disabled={refining} onClick={() => setRefineOpen(false)}><X size={20} aria-hidden="true" /></button>
             </div>
             <p className="muted" style={{ marginTop: 12 }}>
               Describe a change in plain English. Everything else stays the same. Ticked tasks and vendors stay ticked; budget locks are reset.
             </p>
             <form onSubmit={(e) => { e.preventDefault(); refine(refineText); }}>
-              <label htmlFor="refine">What should change?</label>
+              <label htmlFor="refine">What would you like to change?</label>
               <textarea
                 id="refine"
                 ref={refineInput}
                 value={refineText}
-                maxLength={300}
+                maxLength={400}
                 disabled={refining}
                 placeholder="e.g. Move the sangeet to a rooftop and add a live band"
                 onChange={(e) => setRefineText(e.target.value)}

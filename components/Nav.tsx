@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Menu, NotebookPen, X } from "lucide-react";
+import ThemePicker from "./ThemePicker";
 
 const LINKS = [
   { href: "/", label: "Home" },
@@ -20,9 +22,10 @@ export default function Nav() {
     <header className="nav no-print">
       <div className="container nav-inner">
         <Link href="/" className="logo" aria-label="UtsavAI home">
-          <span className="logo-mark" aria-hidden="true">✦</span>
+          <span className="logo-mark" aria-hidden="true"><NotebookPen size={18} strokeWidth={2} /></span>
           <span>Utsav<span className="grad-text">AI</span></span>
         </Link>
+        <span className="nav-theme"><ThemePicker /></span>
         <button
           type="button"
           className="btn btn-ghost btn-icon nav-toggle"
@@ -31,7 +34,7 @@ export default function Nav() {
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((o) => !o)}
         >
-          {open ? "✕" : "☰"}
+          {open ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
         </button>
         <nav id="nav-links" className="nav-links" data-open={open} aria-label="Main">
           {LINKS.map((l) => (

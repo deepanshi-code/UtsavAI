@@ -1,11 +1,13 @@
 "use client";
 
+import { Lock, LockOpen, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { editCategory, rebalance, sumBudget } from "@/lib/budget";
 import { formatINR } from "@/lib/format";
 import type { BudgetItem } from "@/lib/types";
 
-export const CATEGORY_COLORS = ["#f6a623", "#e5398c", "#8b5cf6", "#2dd4bf", "#ff7a2f", "#38bdf8", "#a3e635", "#fb7185", "#fbbf24", "#818cf8", "#f472b6", "#34d399"];
+// The first three follow the active theme; the rest are fixed, distinct hues that read on every theme.
+export const CATEGORY_COLORS = ["var(--accent)", "var(--accent-2)", "var(--accent-3)", "#2dd4bf", "#f59e0b", "#a3e635", "#fb7185", "#818cf8", "#22d3ee", "#c084fc", "#facc15", "#34d399"];
 export const colorAt = (i: number) => CATEGORY_COLORS[i % CATEGORY_COLORS.length];
 
 function arc(cx: number, cy: number, r0: number, r1: number, a0: number, a1: number) {
@@ -38,14 +40,14 @@ export function BudgetDonut({ items, size = "full" }: { items: BudgetItem[]; siz
             <path key={i} d={d} fill={colorAt(i)} data-active={active === i} onPointerEnter={() => setActive(i)} onPointerLeave={() => setActive(null)} />
           ) : null,
         )}
-        <text x="100" y="94" textAnchor="middle" fill="#a49eb8" fontSize="10" fontFamily="var(--font-body)">
+        <text x="100" y="94" textAnchor="middle" fill="var(--muted)" fontSize="10" fontFamily="var(--font-body)">
           {cur ? cur.category.slice(0, 22) : "Total"}
         </text>
-        <text x="100" y="114" textAnchor="middle" fill="#f1eef8" fontSize="17" fontWeight="700" fontFamily="var(--font-display)">
+        <text x="100" y="114" textAnchor="middle" fill="var(--text)" fontSize="17" fontWeight="700" fontFamily="var(--font-display)">
           {formatINR(cur ? cur.amount : sumBudget(items))}
         </text>
         {cur && (
-          <text x="100" y="130" textAnchor="middle" fill="#f6a623" fontSize="10" fontWeight="600">
+          <text x="100" y="130" textAnchor="middle" fill="var(--accent)" fontSize="10" fontWeight="600">
             {Math.round((cur.amount / total) * 100)}%
           </text>
         )}
@@ -128,7 +130,7 @@ export default function BudgetPanel({ items, total, guests, onChange }: Props) {
           <div>
             <h3 id="edit-h" style={{ margin: 0 }}>Adjust the budget</h3>
             <p className="muted small" style={{ margin: "4px 0 0" }}>
-              Change any amount and the unlocked categories rebalance to keep the total. 🔒 keeps a number fixed.
+              Change any amount and the unlocked categories rebalance to keep the total. Lock a category to keep its amount fixed.
             </p>
           </div>
           <span className="spacer" />
@@ -150,7 +152,7 @@ export default function BudgetPanel({ items, total, guests, onChange }: Props) {
 
         {overspend > 0 && (
           <div className="alert alert-warn" role="alert" style={{ marginBottom: 12 }}>
-            <span aria-hidden="true">⚠️</span>
+            <TriangleAlert size={20} aria-hidden="true" style={{ flex: "none" }} />
             Locked categories are {formatINR(overspend)} over the total. Raise the total or unlock a category.
           </div>
         )}
@@ -177,7 +179,7 @@ export default function BudgetPanel({ items, total, guests, onChange }: Props) {
                     title={it.locked ? "Locked: won't change when rebalancing" : "Lock this amount"}
                     onClick={() => onChange(items.map((x, n) => (n === idx ? { ...x, locked: !x.locked } : x)), total)}
                   >
-                    {it.locked ? "🔒" : "🔓"}
+                    {it.locked ? <Lock size={16} aria-hidden="true" /> : <LockOpen size={16} aria-hidden="true" />}
                   </button>
                 </div>
                 <div role="cell" className="notes">{it.notes}</div>

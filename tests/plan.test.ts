@@ -4,7 +4,7 @@ import { buildIcs, escapeIcs, taskDate } from "@/lib/ics";
 import { decodeShare, encodeShare } from "@/lib/share";
 import { samplePlan } from "@/lib/sample";
 import type { PlanInput } from "@/lib/types";
-import { validateInput } from "@/lib/validate";
+import { LIMITS, validateInput } from "@/lib/validate";
 
 function inDays(n: number): string {
   const d = new Date();
@@ -42,7 +42,23 @@ describe("validateInput", () => {
 
   it("caps long free text instead of failing", () => {
     const r = validateInput({ ...input, preferences: "x".repeat(5000) });
-    expect(r.ok && r.value.preferences.length).toBe(500);
+    expect(r.ok && r.value.preferences.length).toBe(LIMITS.longText);
+  });
+
+  it("cleans the per-function list: drops unnamed rows, clamps day and guests", () => {
+    const r = validateInput({
+      ...input,
+      days: 3,
+      functions: [{ name: "Haldi", day: 9, guests: -5, theme: "Yellow" }, { name: "", day: 1, guests: 10 }, "junk"],
+    });
+    expect(r.ok && r.value.functions).toEqual([{ name: "Haldi", day: 3, guests: 1, theme: "Yellow" }]);
+  });
+
+  it("only plans hotel stays when rooms are requested", () => {
+    const ok = validateInput({ ...input, days: 2, stay: { rooms: 40, nights: 99, tier: "palace" } });
+    expect(ok.ok && ok.value.stay).toEqual({ rooms: 40, nights: 10, tier: "mid" });
+    const none = validateInput({ ...input, stay: { rooms: 0 } });
+    expect(none.ok && none.value.stay).toBeUndefined();
   });
 });
 

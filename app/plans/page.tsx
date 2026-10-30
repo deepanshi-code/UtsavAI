@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, NotebookPen } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import Tilt from "@/components/Tilt";
@@ -27,7 +28,7 @@ export default function PlansPage() {
     <div className="page container">
       <div className="row" style={{ marginBottom: 28 }}>
         <div>
-          <span className="eyebrow">Dashboard</span>
+          <span className="eyebrow">Your celebrations</span>
           <h1 style={{ fontSize: "clamp(1.8rem, 4vw, 2.6rem)", margin: "6px 0 0" }}>My plans</h1>
           <p className="muted" style={{ margin: "6px 0 0" }}>Saved in this browser only. Use Share to open a plan on another device.</p>
         </div>
@@ -39,10 +40,10 @@ export default function PlansPage() {
         <div className="plans-grid">{[0, 1, 2].map((i) => <div key={i} className="skeleton" style={{ height: 200 }} />)}</div>
       ) : plans.length === 0 ? (
         <div className="card empty">
-          <div className="big" aria-hidden="true">🪔</div>
+          <div className="big" aria-hidden="true"><NotebookPen size={40} strokeWidth={1.5} /></div>
           <h2>No plans yet</h2>
           <p className="muted">Create your first plan. It takes about a minute.</p>
-          <Link href="/plan/new" className="btn btn-primary" style={{ marginTop: 12 }}>Start planning →</Link>
+          <Link href="/plan/new" className="btn btn-primary" style={{ marginTop: 12 }}>Start planning <ArrowRight size={16} aria-hidden="true" /></Link>
         </div>
       ) : (
         <>
@@ -65,7 +66,7 @@ export default function PlansPage() {
               return (
                 <Tilt key={p.id} className="card card-hover plan-card">
                   <div className="row">
-                    <span className="badge badge-accent">{meta.emoji} {meta.label}</span>
+                    <span className="badge badge-accent"><meta.icon size={14} aria-hidden="true" /> {meta.label}</span>
                     <span className="spacer" />
                     <span className={`badge ${days < 0 ? "" : days <= 14 ? "badge-warn" : ""}`}>
                       {days > 0 ? `in ${days} days` : days === 0 ? "today" : "past"}

@@ -1,5 +1,6 @@
 "use client";
 
+import { SearchX } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -36,7 +37,7 @@ export default function PlanPage() {
     return (
       <div className="page container">
         <div className="card empty">
-          <div className="big" aria-hidden="true">🔍</div>
+          <div className="big" aria-hidden="true"><SearchX size={40} strokeWidth={1.5} /></div>
           <h2>Plan not found</h2>
           <p className="muted">Plans are saved in the browser they were made in. This one isn&apos;t in this browser.</p>
           <div className="row" style={{ justifyContent: "center", marginTop: 16 }}>
@@ -55,6 +56,8 @@ export default function PlanPage() {
       </nav>
       <PlanDashboard
         saved={saved}
+        inviteHref={`/plan/${saved.id}/invite`}
+        editHref={`/plan/new?edit=${saved.id}`}
         onChange={(next) => {
           setSaved(next);
           if (!savePlan(next)) toast("Couldn't save changes in this browser.", "error");

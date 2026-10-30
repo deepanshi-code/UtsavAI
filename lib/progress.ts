@@ -9,10 +9,14 @@ const key = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
  */
 export function carryProgress(prev: EventPlan, next: EventPlan): EventPlan {
   const doneTasks = new Set(prev.timeline.filter((t) => t.done).map((t) => key(t.task)));
-  const doneVendors = new Set(prev.vendors.filter((v) => v.done).map((v) => key(v.category)));
+  const oldVendors = new Map(prev.vendors.map((v) => [key(v.category), v]));
   return {
     ...next,
     timeline: next.timeline.map((t) => (doneTasks.has(key(t.task)) ? { ...t, done: true } : t)),
-    vendors: next.vendors.map((v) => (doneVendors.has(key(v.category)) ? { ...v, done: true } : v)),
+    // Ticks and the real businesses the family shortlisted both survive.
+    vendors: next.vendors.map((v) => {
+      const old = oldVendors.get(key(v.category));
+      return old ? { ...v, done: old.done, shortlist: old.shortlist } : v;
+    }),
   };
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Link2, Link2Off } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -26,7 +27,7 @@ export default function SharePage() {
     return (
       <div className="page container">
         <div className="card empty">
-          <div className="big" aria-hidden="true">🔗</div>
+          <div className="big" aria-hidden="true"><Link2Off size={40} strokeWidth={1.5} /></div>
           <h2>This share link doesn&apos;t work</h2>
           <p className="muted">It may have been cut off when it was copied. Ask for the link again, or create your own plan.</p>
           <Link href="/plan/new" className="btn btn-primary" style={{ marginTop: 12 }}>Create a plan</Link>
@@ -48,7 +49,7 @@ export default function SharePage() {
         onChange={setSaved}
         banner={
           <div className="alert alert-warn no-print" style={{ marginBottom: 24, alignItems: "center" }}>
-            <span aria-hidden="true">🔗</span>
+            <Link2 size={20} aria-hidden="true" style={{ flex: "none" }} />
             <span style={{ flex: 1 }}>You&apos;re viewing a shared plan. Changes aren&apos;t kept until you save a copy.</span>
             <button type="button" className="btn btn-sm btn-primary" onClick={saveCopy}>Save to my plans</button>
           </div>

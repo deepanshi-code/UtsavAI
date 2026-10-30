@@ -1,8 +1,9 @@
 # UtsavAI
 
 A GenAI planning assistant for Indian weddings, birthdays, festivals and community events.
-Describe your event and get a **budget that actually adds up**, a **dated timeline**, a
-**vendor checklist** and **personalised ideas and customs**, all editable and exportable.
+Describe your event and get a **budget that actually adds up**, a **day-by-day schedule**,
+**venues in your city**, a **task and vendor checklist**, **ideas and customs**, and a
+ready-to-send **invitation**, all editable and exportable.
 
 Built for PromptWars Virtual, Challenge 05: Celebration & Event Planner.
 
@@ -12,9 +13,10 @@ Built for PromptWars Virtual, Challenge 05: Celebration & Event Planner.
 
 | Route | What it's for |
 |---|---|
-| `/` | Landing page with a Three.js hero scene (pauses off-screen, still frame for reduced-motion users) |
-| `/plan/new` | 4-step wizard: occasion → date, city, guests & budget (log-scale sliders, live per-guest cost) → style & needs → review |
-| `/plan/[id]` | Plan dashboard: countdown & progress stats, tabs for Overview, Budget, Timeline, Vendors, Ideas; refine drawer; share, calendar, print |
+| `/` | Landing page with a CSS 3D planner notebook that leans toward the pointer (no WebGL, respects reduced motion) |
+| `/plan/new` | 4-step wizard: occasion → dates (1–7 days), city, guests & budget (log-scale sliders, live per-guest cost) → style & preferences → review |
+| `/plan/[id]` | Plan dashboard: countdown & progress stats; tabs for Overview, Schedule, Venues, Budget, Tasks, Vendors, Ideas; refine drawer; share, calendar, print |
+| `/plan/[id]/invite` | Invitation studio: one card per function (Haldi, Sangeet…) plus the main card, each with its own date, time, venue and a design matched to its theme; AI wording (English / Hindi / Hinglish, 4 tones), 8 generated designs × 9 palettes, preview, PNG download, WhatsApp text |
 | `/plans` | Saved plans with search, sort and progress |
 | `/share#p=…` | Opens a shared plan; "Save to my plans" makes your own editable copy |
 
@@ -27,25 +29,36 @@ Plans are saved in the browser (localStorage), so no account or database is need
 | Structured plan, not a chat blob | Gemini returns JSON constrained by a response schema ([lib/gemini.ts](lib/gemini.ts)); the UI renders it as tables and checklists |
 | Budget that sums correctly | The server rescales model output so categories add up to your exact total (LLMs are unreliable at arithmetic) |
 | Live budget rebalancing | Edit any category and it locks; the unlocked ones rebalance proportionally. Overspend is flagged, never silently fixed ([lib/budget.ts](lib/budget.ts)) |
-| Dated timeline | Tasks are stored as "days before event", clamped to time actually remaining, shown with real dates and overdue flags |
-| Refine in plain English | "Cut budget by 20%", "make it eco-friendly": the current plan and your change go back to Gemini |
+| Plan each function | Weddings and multi-day events list their functions (day, guests, theme). Each gets its own theme, decor, food, music and dress code; edit any of them in place, or re-plan just one function with AI while the rest stays as is |
+| Guest stays | Optional hotel rooms for outstation guests: where to book, cost per room-night, a matching budget line, and hotel listings |
+| Top vendors, automatically | With `GOOGLE_MAPS_API_KEY` set (Places API New), each vendor type, venue type and the hotel plan shows the city's top 3–4 businesses on its own, ranked by rating weighted by review count, with phone, website and map link; shortlist the ones you like. Without a key it links to the same Google Maps search. Businesses never come from the model |
+| Edit and regenerate | "Edit details" reopens the wizard with the plan's current details and functions; regenerating updates the same plan and keeps ticks, shortlists and invitations |
+| Venues in your city | Gemini suggests *kinds* of venue (capacity, price range, why it fits); each opens a live Google Maps search of the user's city, so every listed venue is real |
+| Dated task list | Tasks are stored as "days before day 1", clamped to the time actually remaining, shown with real dates and overdue flags |
 | Progress tracking | Tick off tasks and vendors; progress survives reloads and refines (matched by task/vendor name) |
+| Refine in plain English | "Cut budget by 20%", "make it eco-friendly": the current plan and your change go back to Gemini, and a changed total is honoured |
+| Creative ideas | 10–12 ideas across six categories (decor, entertainment, food, guest experience, photos & social, tradition reimagined), including Gen-Z favourites; "More ideas" adds six new ones, optionally in one category |
+| Invitations | Gemini writes the wording using only facts the host entered; designs are drawn from a seed, so "New pattern" gives a one-off card, exported as a 1080×1350 PNG |
 | Indian context | INR with lakh formatting, city-aware pricing, regional customs only when they fit (never assumes religion) |
-| Export & share | Print/save as PDF, add the timeline to Google/Apple Calendar (.ics), copy a share link |
+| Export & share | Print/save as PDF, add tasks and functions to Google/Apple Calendar (.ics), copy a share link |
 
 ### Design decisions
 - **Share links live in the URL fragment** (`#p=…`, lz-compressed). Fragments are never sent to the server, so there's no database to run and shared plans aren't logged.
-- **Model output is validated, not trusted.** `normalisePlan` drops malformed rows, caps string lengths, clamps dates and fixes the budget sum. Plans sent back for refinement are re-normalised and size-capped.
-- **Prompt-injection hygiene.** User text is fenced in `<event_details>` and the system prompt says to treat it as data. This reduces risk but doesn't eliminate it, which is why output is also validated.
-- **Model fallback within a time budget.** During testing the newest Flash models were often overloaded (503s, 60s+ queues). The server tries `gemini-3.5-flash` first with a 30s cap, then `gemini-3.1-flash-lite`, all inside Vercel's 60s function limit. Thinking is set to LOW because a schema-shaped plan doesn't need long reasoning.
+- **Model output is validated, not trusted.** `normalisePlan` drops malformed rows, caps string lengths, clamps dates and schedule days, sanitises map queries and fixes the budget sum. Plans sent back for refinement are re-normalised and size-capped.
+- **Prompt-injection hygiene.** User text is fenced (`<event_details>`, `<facts>`) and the prompts say to treat it as data. This reduces risk but doesn't eliminate it, which is why output is also validated.
+- **Model fallback within a time budget.** During testing the newest Flash models were often overloaded (503s, 60s+ queues). The server cycles `gemini-3.5-flash` and `gemini-3.1-flash-lite` with backoff, inside Vercel's 60s function limit. Thinking is set to LOW because schema-shaped output doesn't need long reasoning.
 - **No guessed facts.** The model once titled a 30-guest party a "30th birthday". The prompt now says "Guest count: 30 people" and passes an explicit "Age / milestone: not specified (do not assume…)" unless the user fills in the optional milestone field.
+- **No invented venues.** Free-tier keys can't use Gemini's Maps grounding, and an LLM naming venues would invent some. So the model only suggests venue types and the names come from Google Maps (keyless embed + documented Maps URLs). With billing enabled, Maps grounding could list named venues directly.
+- **Calm, editorial design.** Warm ivory paper, Fraunces headings, Inter body text and Lucide line icons (no emoji), flat buttons, in four themes (Paper, Blush, Mint, Night journal) set before first paint to avoid a flash.
 - **Accessible interactions.** ARIA tabs with arrow-key navigation, radio/checkbox roles on custom controls, focus moved to each wizard step's heading, `prefers-reduced-motion` respected throughout, 3D tilt disabled on touch.
-- **API key stays server-side** in a Next.js route handler; inputs are validated and the route has a best-effort rate limit.
-- **Runs without a key.** If `GEMINI_API_KEY` is unset, the API returns a clearly labelled sample plan so the UI can be developed and tested offline.
+- **API key stays server-side** in Next.js route handlers; inputs are validated and the plan route has a best-effort rate limit.
+- **A planner, not a form.** The plan opens with a personal note in the planner's voice, and the 15–30s generation wait shows the family's brief and occasion-specific tips instead of a bare spinner.
+- **Runs without a key.** If `GEMINI_API_KEY` is unset, the API returns a clearly labelled sample plan (and template invitation wording) so the UI can be developed and tested offline.
 
 ### Known limitations
 - The rate limit is per serverless instance (in memory), so it blunts bursts but isn't a hard cap.
 - Prices come from the model's general knowledge, not live vendor data. The UI says to verify them.
+- The map uses Google's keyless embed URL, which isn't an officially supported API; the "Open in Google Maps" button uses documented Maps URLs and keeps working regardless.
 - Refining regenerates the plan, so manual budget locks are reset.
 - Saved plans live in one browser; use a share link to move a plan to another device.
 
@@ -58,7 +71,7 @@ npm run dev                  # http://localhost:3000
 ```
 
 ```bash
-npm test          # 49 unit tests: budget maths, validation, prompt, normalisation, retries, .ics, share links, progress
+npm test          # 78 unit tests: budget maths, validation, prompts, normalisation, retries, multi-day schedule, venues, invitations, .ics, share links, progress
 npm run typecheck
 ```
 
@@ -68,4 +81,4 @@ npm run typecheck
 3. Add environment variable `GEMINI_API_KEY` → Deploy.
 
 ## Stack
-Next.js 15 (App Router) · React 19 · TypeScript · Three.js · `@google/genai` (Gemini 3.5 Flash with 3.1 Flash-Lite fallback, structured output) · Vitest
+Next.js 15 (App Router) · React 19 · TypeScript · `@google/genai` (Gemini 3.5 Flash with 3.1 Flash-Lite fallback, structured output) · Lucide icons · Vitest

@@ -1,7 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { InviteOptions, InviteText } from "./invite";
 import type { EventPlan, PlanInput } from "./types";
+
+/** The invitation the host designed for this plan. */
+export interface SavedInvite {
+  options: InviteOptions;
+  text: InviteText;
+  /** Set only when the host edits the plain-text message by hand; otherwise it follows the card. */
+  message?: string;
+  template: string;
+  palette: string;
+  seed: number;
+}
 
 /**
  * Plans are kept in the browser (localStorage) so there's no account or database.
@@ -13,6 +25,10 @@ export interface SavedPlan {
   input: PlanInput;
   plan: EventPlan;
   source: "gemini" | "sample" | "shared";
+  /** @deprecated single invitation from older versions; read through `invites.main`. */
+  invite?: SavedInvite;
+  /** One invitation per occasion: "main" plus one per function (see lib/invite occasionKey). */
+  invites?: Record<string, SavedInvite>;
   createdAt: number;
   updatedAt: number;
 }

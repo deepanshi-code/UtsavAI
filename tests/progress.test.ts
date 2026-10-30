@@ -5,6 +5,10 @@ import type { EventPlan } from "@/lib/types";
 const plan = (tasks: [string, boolean?][], vendors: [string, boolean?][]): EventPlan => ({
   title: "",
   summary: "",
+  plannerNote: "",
+  stay: null,
+  schedule: [],
+  venueTypes: [],
   budget: [],
   ideas: [],
   customs: [],

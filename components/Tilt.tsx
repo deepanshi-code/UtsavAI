@@ -13,7 +13,7 @@ interface Props extends React.HTMLAttributes<HTMLElement> {
  * Tilts its contents in 3D toward the pointer, with a soft glare. Skipped for touch
  * pointers and for users who prefer reduced motion, so it never gets in the way.
  */
-export default function Tilt({ as = "div", max = 8, className = "", children, ...rest }: Props) {
+export default function Tilt({ as = "div", max = 3, className = "", children, ...rest }: Props) {
   const ref = useRef<HTMLElement>(null);
 
   const enabled = () =>

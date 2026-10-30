@@ -1,12 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Sora } from "next/font/google";
+import { Caveat, Fraunces, Inter } from "next/font/google";
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import { ToastProvider } from "@/components/Toast";
+import { themeBootScript } from "@/lib/themes";
 import "./globals.css";
 
+// Serif headings, a neutral sans for body text; handwriting only inside the hero notebook.
+const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", display: "swap" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap" });
+const caveat = Caveat({ subsets: ["latin"], variable: "--font-caveat", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "UtsavAI: AI planner for Indian celebrations", template: "%s · UtsavAI" },
@@ -14,18 +17,22 @@ export const metadata: Metadata = {
     "Plan weddings, birthdays, festivals and community events with AI: a budget that adds up, a dated timeline, vendor checklists and ideas for your city and traditions.",
 };
 
-export const viewport: Viewport = { themeColor: "#08070d", colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: "#faf7f2" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${sora.variable}`}>
+    // suppressHydrationWarning: the boot script may set data-theme before React hydrates.
+    <html lang="en" data-theme="paper" className={`${fraunces.variable} ${inter.variable} ${caveat.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body>
         <ToastProvider>
           <Nav />
           <main id="main">{children}</main>
           <footer className="footer no-print">
             <div className="container row">
-              <span>© {new Date().getFullYear()} UtsavAI · Built with Gemini</span>
+              <span>UtsavAI · AI celebration planner</span>
               <span className="spacer" />
               <Link href="/plans" className="nav-link">My plans</Link>
               <Link href="/plan/new" className="nav-link">New plan</Link>

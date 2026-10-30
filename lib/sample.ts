@@ -10,6 +10,15 @@ export function samplePlan(input: PlanInput): EventPlan {
     {
       title: input.title || `Sample ${input.eventType} plan`,
       summary: `This is a fixed sample plan for ${input.guests} guests in ${input.city}. Add a GEMINI_API_KEY to get a plan generated for your actual event.`,
+      schedule: [
+        { day: 1, time: "6:00 PM", title: "Guests arrive", details: "Welcome drinks and seating." },
+        { day: 1, time: "7:30 PM", title: "Main celebration", details: "Ceremony or programme." },
+        { day: 1, time: "9:00 PM", title: "Dinner", details: "Buffet service." },
+      ],
+      venueTypes: [
+        { type: "Banquet hall", why: "Indoor, weather-proof, catering often included.", capacity: "100-400 guests", priceRange: "Varies by city", searchQuery: "banquet hall" },
+        { type: "Lawn / garden venue", why: "Open-air and spacious for larger groups.", capacity: "200-800 guests", priceRange: "Varies by city", searchQuery: "wedding lawn" },
+      ],
       budget: [
         { category: "Venue", amount: 30, notes: "Compare weekday vs weekend rates." },
         { category: "Catering", amount: 35, notes: "Per-plate pricing; confirm final headcount 3 days before." },
