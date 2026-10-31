@@ -21,16 +21,40 @@ export function Botanical({ p, r, text, facts }: DesignProps) {
         <path d={path} fill="none" stroke="#8c7a6b" strokeWidth={3} strokeLinejoin="round" opacity={0.75} />
         {pts.map(({ x, y }, i) => (
           <g key={i}>
-            <Leaf x={x} y={y} len={46 + r() * 22} angle={dir > 0 ? -40 + r() * 30 : 220 - r() * 30} fill={p.accent} />
-            <Leaf x={x} y={y} len={40 + r() * 20} angle={dir > 0 ? 30 + r() * 30 : 150 - r() * 30} fill={p.accent} />
-            {i % every === 1 && <Flower x={x + dir * (r() * 30)} y={y} size={20 + r() * 6} fill={bloom} centre="#e7c46a" rot={r() * 72} />}
+            <Leaf
+              x={x}
+              y={y}
+              len={46 + r() * 22}
+              angle={dir > 0 ? -40 + r() * 30 : 220 - r() * 30}
+              fill={p.accent}
+            />
+            <Leaf
+              x={x}
+              y={y}
+              len={40 + r() * 20}
+              angle={dir > 0 ? 30 + r() * 30 : 150 - r() * 30}
+              fill={p.accent}
+            />
+            {i % every === 1 && (
+              <Flower
+                x={x + dir * (r() * 30)}
+                y={y}
+                size={20 + r() * 6}
+                fill={bloom}
+                centre="#e7c46a"
+                rot={r() * 72}
+              />
+            )}
           </g>
         ))}
       </g>
     );
   };
   // "Riya & Arjun's wedding" → ["Riya", "Arjun"]: drop the possessive tail so the pair reads cleanly.
-  const names = text.names.split(/\s*(?:&| and | weds )\s*/i).filter(Boolean).map((n, i, all) => (i === all.length - 1 ? n.replace(/'s\b.*$/i, "").trim() : n));
+  const names = text.names
+    .split(/\s*(?:&| and | weds )\s*/i)
+    .filter(Boolean)
+    .map((n, i, all) => (i === all.length - 1 ? n.replace(/'s\b.*$/i, "").trim() : n));
   const pair = names.length >= 2;
   return (
     <>
@@ -42,22 +66,90 @@ export function Botanical({ p, r, text, facts }: DesignProps) {
         bottom={CARD_H - 160}
         width={560}
         items={[
-          { kind: "text", text: text.headline, font: SERIF, size: 34, italic: true, fill: p.ink, gap: 0, maxLines: 2 },
+          {
+            kind: "text",
+            text: text.headline,
+            font: SERIF,
+            size: 34,
+            italic: true,
+            fill: p.ink,
+            gap: 0,
+            maxLines: 2,
+          },
           ...(pair
             ? ([
-                { kind: "text", text: names[0].toUpperCase(), font: CAPS, size: 58, spacing: 3, fill: p.ink, gap: 96, factor: 0.72, maxLines: 2 },
+                {
+                  kind: "text",
+                  text: names[0].toUpperCase(),
+                  font: CAPS,
+                  size: 58,
+                  spacing: 3,
+                  fill: p.ink,
+                  gap: 96,
+                  factor: 0.72,
+                  maxLines: 2,
+                },
                 { kind: "text", text: "and", font: SCRIPT, size: 56, fill: p.ink, gap: 68 },
-                { kind: "text", text: names.slice(1).join(" & ").toUpperCase(), font: CAPS, size: 58, spacing: 3, fill: p.ink, gap: 76, factor: 0.72, maxLines: 2 },
+                {
+                  kind: "text",
+                  text: names.slice(1).join(" & ").toUpperCase(),
+                  font: CAPS,
+                  size: 58,
+                  spacing: 3,
+                  fill: p.ink,
+                  gap: 76,
+                  factor: 0.72,
+                  maxLines: 2,
+                },
               ] as Item[])
-            : ([{ kind: "text", text: text.names.toUpperCase(), font: CAPS, size: 56, spacing: 3, fill: p.ink, gap: 96, factor: 0.72, maxLines: 3 }] as Item[])),
+            : ([
+                {
+                  kind: "text",
+                  text: text.names.toUpperCase(),
+                  font: CAPS,
+                  size: 56,
+                  spacing: 3,
+                  fill: p.ink,
+                  gap: 96,
+                  factor: 0.72,
+                  maxLines: 3,
+                },
+              ] as Item[])),
           { kind: "text", text: facts.dates, font: SCRIPT, size: 54, fill: p.ink, gap: 92, factor: 0.42 },
           { kind: "text", text: text.body, font: SERIF, size: 31, fill: p.ink, gap: 62, maxLines: 4 },
           { kind: "text", text: facts.time, font: SERIF, size: 31, fill: p.ink, gap: 56 },
           { kind: "text", text: facts.venue, font: SERIF, size: 31, fill: p.ink, gap: 44, maxLines: 2 },
-          { kind: "text", text: text.details, font: SERIF, size: 27, italic: true, fill: p.ink, opacity: 0.85, gap: 50, maxLines: 3 },
+          {
+            kind: "text",
+            text: text.details,
+            font: SERIF,
+            size: 27,
+            italic: true,
+            fill: p.ink,
+            opacity: 0.85,
+            gap: 50,
+            maxLines: 3,
+          },
           { kind: "text", text: text.closing, font: SERIF, size: 30, fill: p.ink, gap: 62, maxLines: 2 },
-          { kind: "text", text: facts.hosts ? `– ${facts.hosts}` : "", font: SERIF, size: 28, italic: true, fill: p.ink, gap: 46 },
-          { kind: "text", text: facts.rsvp ? `RSVP · ${facts.rsvp}` : "", font: SERIF, size: 24, spacing: 1, fill: p.ink, opacity: 0.8, gap: 46 },
+          {
+            kind: "text",
+            text: facts.hosts ? `– ${facts.hosts}` : "",
+            font: SERIF,
+            size: 28,
+            italic: true,
+            fill: p.ink,
+            gap: 46,
+          },
+          {
+            kind: "text",
+            text: facts.rsvp ? `RSVP · ${facts.rsvp}` : "",
+            font: SERIF,
+            size: 24,
+            spacing: 1,
+            fill: p.ink,
+            opacity: 0.8,
+            gap: 46,
+          },
         ]}
       />
     </>

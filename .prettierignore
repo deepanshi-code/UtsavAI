@@ -1,0 +1,7 @@
+.next
+.next-check
+node_modules
+public
+package-lock.json
+*.md
+tsconfig.json

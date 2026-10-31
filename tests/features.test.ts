@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { addDays, formatDateRange } from "@/lib/format";
-import { buildPrompt, normalisePlan } from "@/lib/gemini";
+import { normalisePlan } from "@/lib/normalise";
+import { buildPrompt } from "@/lib/prompts";
 import { buildIcs } from "@/lib/ics";
-import { buildInvitePrompt, cleanOptions, composeMessage, defaultInvite, inviteFacts, normaliseInvite } from "@/lib/invite";
+import {
+  buildInvitePrompt,
+  cleanOptions,
+  composeMessage,
+  defaultInvite,
+  inviteFacts,
+  normaliseInvite,
+} from "@/lib/invite";
 import type { PlanInput } from "@/lib/types";
 import { validateInput } from "@/lib/validate";
 
@@ -26,7 +34,10 @@ const input: PlanInput = {
 describe("multi-day events", () => {
   it("validates the number of days", () => {
     expect(validateInput({ ...input, days: 3 }).ok).toBe(true);
-    expect(validateInput({ ...input, days: undefined }).ok && (validateInput({ ...input, days: undefined }) as { value: PlanInput }).value.days).toBe(1);
+    expect(
+      validateInput({ ...input, days: undefined }).ok &&
+        (validateInput({ ...input, days: undefined }) as { value: PlanInput }).value.days,
+    ).toBe(1);
     expect(validateInput({ ...input, days: 9 }).ok).toBe(false);
     expect(validateInput({ ...input, days: 1.5 }).ok).toBe(false);
   });
@@ -37,10 +48,19 @@ describe("multi-day events", () => {
 
   it("clamps schedule days into the celebration and sorts them", () => {
     const plan = normalisePlan(
-      { schedule: [{ day: 9, time: "7 PM", title: "Reception", details: "" }, { day: 0, time: "11 AM", title: "Haldi", details: "" }, { day: 2, time: "", title: "", details: "dropped: no title" }] },
+      {
+        schedule: [
+          { day: 9, time: "7 PM", title: "Reception", details: "" },
+          { day: 0, time: "11 AM", title: "Haldi", details: "" },
+          { day: 2, time: "", title: "", details: "dropped: no title" },
+        ],
+      },
       input,
     );
-    expect(plan.schedule.map((s) => [s.day, s.title])).toEqual([[1, "Haldi"], [3, "Reception"]]);
+    expect(plan.schedule.map((s) => [s.day, s.title])).toEqual([
+      [1, "Haldi"],
+      [3, "Reception"],
+    ]);
   });
 
   it("formats date ranges", () => {
@@ -63,7 +83,18 @@ describe("multi-day events", () => {
 describe("venue types", () => {
   it("keeps map searches to plain words (no injected URLs or symbols)", () => {
     const plan = normalisePlan(
-      { venueTypes: [{ type: "Banquet hall", why: "", capacity: "", priceRange: "", searchQuery: "banquet hall<script>&q=http://x" }, { type: "Lawn", why: "", capacity: "", priceRange: "", searchQuery: "" }] },
+      {
+        venueTypes: [
+          {
+            type: "Banquet hall",
+            why: "",
+            capacity: "",
+            priceRange: "",
+            searchQuery: "banquet hall<script>&q=http://x",
+          },
+          { type: "Lawn", why: "", capacity: "", priceRange: "", searchQuery: "" },
+        ],
+      },
       input,
     );
     expect(plan.venueTypes[0].searchQuery).not.toMatch(/[<>:/=]/);
@@ -86,7 +117,11 @@ describe("invitations", () => {
   });
 
   it("forbids invented details, fences the facts, and keeps form facts out of the AI text", () => {
-    const p = buildInvitePrompt(input, plan, cleanOptions({ language: "Hindi", venue: "Rambagh", rsvp: "Riya 98xx" }));
+    const p = buildInvitePrompt(
+      input,
+      plan,
+      cleanOptions({ language: "Hindi", venue: "Rambagh", rsvp: "Riya 98xx" }),
+    );
     expect(p).toMatch(/Never invent names, places, times, phone numbers/);
     expect(p).toMatch(/<facts>[\s\S]*Dates:[\s\S]*<\/facts>/);
     expect(p).toMatch(/Do not repeat any of them/);
@@ -98,14 +133,20 @@ describe("invitations", () => {
 
   it("takes the card's facts straight from the form, with a venue fallback", () => {
     expect(inviteFacts(input, cleanOptions({})).venue).toBe("Jaipur · venue details to follow");
-    const f = inviteFacts(input, cleanOptions({ venue: " Rambagh Gardens ", time: "7 PM", rsvp: "Riya", hosts: "The Sharmas" }));
+    const f = inviteFacts(
+      input,
+      cleanOptions({ venue: " Rambagh Gardens ", time: "7 PM", rsvp: "Riya", hosts: "The Sharmas" }),
+    );
     expect(f).toMatchObject({ venue: "Rambagh Gardens", time: "7 PM", rsvp: "Riya", hosts: "The Sharmas" });
     expect(f.dates).toBe(formatDateRange(input.date, 3));
   });
 
   it("builds the text message from the same pieces as the card", () => {
     const text = defaultInvite(input, plan);
-    const msg = composeMessage(text, inviteFacts(input, cleanOptions({ venue: "Rambagh Gardens", rsvp: "Riya", hosts: "The Sharmas" })));
+    const msg = composeMessage(
+      text,
+      inviteFacts(input, cleanOptions({ venue: "Rambagh Gardens", rsvp: "Riya", hosts: "The Sharmas" })),
+    );
     expect(msg).toContain("Venue: Rambagh Gardens");
     expect(msg).toContain("RSVP: Riya");
     expect(msg).toContain("– The Sharmas");

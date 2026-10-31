@@ -25,28 +25,49 @@ export const occasionKey = (s: Pick<ScheduleItem, "day" | "title">) => `fn:${s.d
  * slots like lunch have no theme or decor). Every other occasion gets a single card.
  */
 export function occasionsFor(input: PlanInput, schedule: ScheduleItem[]): InviteOccasion[] {
-  const main: InviteOccasion = { key: MAIN_KEY, title: "Whole celebration", day: 1, time: "", guests: input.guests };
+  const main: InviteOccasion = {
+    key: MAIN_KEY,
+    title: "Whole celebration",
+    day: 1,
+    time: "",
+    guests: input.guests,
+  };
   if (input.eventType !== "wedding") return [main];
   const fns = schedule
     .filter((s) => s.theme || s.decor)
-    .map((s) => ({ key: occasionKey(s), title: s.title, day: s.day, time: s.time, guests: s.guests, theme: s.theme }));
+    .map((s) => ({
+      key: occasionKey(s),
+      title: s.title,
+      day: s.day,
+      time: s.time,
+      guests: s.guests,
+      theme: s.theme,
+    }));
   return fns.length > 1 ? [main, ...fns] : [main];
 }
 
 /** A starting design that matches the function's feel (it can always be changed). */
-export function designFor(type: EventType, occ?: InviteOccasion, hint = ""): { template: string; palette: string } {
+export function designFor(
+  type: EventType,
+  occ?: InviteOccasion,
+  hint = "",
+): { template: string; palette: string } {
   const t = `${occ?.title ?? ""} ${occ?.theme ?? ""}`.toLowerCase();
   if (occ && occ.key !== MAIN_KEY) {
     if (/haldi|yellow|sunshine/.test(t)) return { template: "toran", palette: "haldi" };
     if (/meh(e)?ndi|henna|green|garden/.test(t)) return { template: "botanical", palette: "mehendi" };
-    if (/sangeet|cocktail|party|dj|retro|bollywood|neon|night|disco|garba/.test(t)) return { template: "festive", palette: "midnight" };
+    if (/sangeet|cocktail|party|dj|retro|bollywood|neon|night|disco|garba/.test(t))
+      return { template: "festive", palette: "midnight" };
     if (/engage|roka|ring|tilak|sagai/.test(t)) return { template: "botanical", palette: "sage" };
     if (/reception/.test(t)) return { template: "royal", palette: "navy" };
-    if (/puja|pooja|aarti|ganesh|havan|path|diwali/.test(t)) return { template: "festive", palette: "festive" };
-    if (/wedding|pheras|ceremony|vivah|shaadi|nikah|anand/.test(t)) return { template: "royal", palette: "peach" };
+    if (/puja|pooja|aarti|ganesh|havan|path|diwali/.test(t))
+      return { template: "festive", palette: "festive" };
+    if (/wedding|pheras|ceremony|vivah|shaadi|nikah|anand/.test(t))
+      return { template: "royal", palette: "peach" };
   }
   // Children's birthdays get the bright party card; grown-up ones the watercolour.
-  if (type === "birthday" && /kid|child|toddler|\b([1-9]|1[0-2])(st|nd|rd|th)\b/i.test(hint)) return { template: "party", palette: "candy" };
+  if (type === "birthday" && /kid|child|toddler|\b([1-9]|1[0-2])(st|nd|rd|th)\b/i.test(hint))
+    return { template: "party", palette: "candy" };
   const byType: Record<EventType, { template: string; palette: string }> = {
     wedding: { template: "royal", palette: "peach" },
     birthday: { template: "watercolour", palette: "wash" },
@@ -118,7 +139,9 @@ export function inviteFacts(input: PlanInput, o: InviteOptions, occ?: InviteOcca
   const forFunction = occ && occ.key !== MAIN_KEY;
   return {
     // A function's card shows its own day; the main card shows the whole date range.
-    dates: forFunction ? formatDate(addDays(input.date, occ.day - 1)) : formatDateRange(input.date, input.days),
+    dates: forFunction
+      ? formatDate(addDays(input.date, occ.day - 1))
+      : formatDateRange(input.date, input.days),
     iso: forFunction ? addDays(input.date, occ.day - 1) : input.date,
     multiDay: !forFunction && (input.days ?? 1) > 1,
     time: o.time.trim() || (forFunction ? occ.time : ""),
@@ -128,17 +151,26 @@ export function inviteFacts(input: PlanInput, o: InviteOptions, occ?: InviteOcca
   };
 }
 
-export function buildInvitePrompt(input: PlanInput, plan: Pick<EventPlan, "title" | "schedule">, o: InviteOptions, occ?: InviteOccasion): string {
+export function buildInvitePrompt(
+  input: PlanInput,
+  plan: Pick<EventPlan, "title" | "schedule">,
+  o: InviteOptions,
+  occ?: InviteOccasion,
+): string {
   const forFunction = occ && occ.key !== MAIN_KEY;
   const facts = [
-    forFunction && `This card is for one function: ${occ.title} (day ${occ.day}${o.time || occ.time ? `, starts ${o.time || occ.time}` : ""}${occ.theme ? `, theme: ${occ.theme}` : ""}${occ.guests ? `, about ${occ.guests} guests` : ""})`,
+    forFunction &&
+      `This card is for one function: ${occ.title} (day ${occ.day}${o.time || occ.time ? `, starts ${o.time || occ.time}` : ""}${occ.theme ? `, theme: ${occ.theme}` : ""}${occ.guests ? `, about ${occ.guests} guests` : ""})`,
     `Occasion: ${input.eventType}`,
     `Event name: ${input.title || plan.title}`,
     input.milestone && `Milestone: ${input.milestone}`,
     `Dates: ${formatDateRange(input.date, input.days)}`,
     `City: ${input.city}`,
     input.style && `Style: ${input.style}`,
-    !forFunction && (input.days ?? 1) > 1 && plan.schedule.length > 0 && `Functions: ${plan.schedule.map((s) => `Day ${s.day} ${s.title}`).join(", ")}`,
+    !forFunction &&
+      (input.days ?? 1) > 1 &&
+      plan.schedule.length > 0 &&
+      `Functions: ${plan.schedule.map((s) => `Day ${s.day} ${s.title}`).join(", ")}`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -175,7 +207,11 @@ export function normaliseInvite(raw: unknown, fallback: InviteText): InviteText 
 }
 
 /** Wording built locally, used before the AI runs and whenever it can't. */
-export function defaultInvite(input: PlanInput, plan: Pick<EventPlan, "title">, occ?: InviteOccasion): InviteText {
+export function defaultInvite(
+  input: PlanInput,
+  plan: Pick<EventPlan, "title">,
+  occ?: InviteOccasion,
+): InviteText {
   const forFunction = occ && occ.key !== MAIN_KEY;
   return {
     headline: forFunction ? `${occ.title} · You're Invited` : "You're Invited",

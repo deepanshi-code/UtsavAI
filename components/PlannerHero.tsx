@@ -37,29 +37,62 @@ export default function PlannerHero() {
               </li>
             ))}
           </ul>
-          <div className="pl-bar"><span /></div>
-          <div className="pl-meta" style={{ marginTop: 6 }}>2 of 5 done</div>
+          <div className="pl-bar">
+            <span />
+          </div>
+          <div className="pl-meta mt-6">2 of 5 done</div>
         </div>
         <div className="pl-spiral">
-          {Array.from({ length: 9 }, (_, i) => <span key={i} />)}
+          {Array.from({ length: 9 }, (_, i) => (
+            <span key={i} />
+          ))}
         </div>
         <div className="pl-page">
-          <div className="pl-title" style={{ color: "var(--accent-2)" }}>Budget</div>
+          <div className="pl-title" style={{ color: "var(--accent-2)" }}>
+            Budget
+          </div>
           <div className="pl-meta">₹12,00,000 allocated</div>
-          <svg viewBox="0 0 120 120" width="112" height="112" style={{ display: "block", margin: "4px auto 8px" }}>
+          <svg
+            viewBox="0 0 120 120"
+            width="112"
+            height="112"
+            style={{ display: "block", margin: "4px auto 8px" }}
+          >
             {SLICES.map(([c, a, b]) => (
-              <circle key={c} cx="60" cy="60" r={r} fill="none" stroke={c} strokeWidth="16"
-                strokeDasharray={`${((b - a) / 100) * C} ${C}`} strokeDashoffset={-(a / 100) * C} transform="rotate(-90 60 60)" />
+              <circle
+                key={c}
+                cx="60"
+                cy="60"
+                r={r}
+                fill="none"
+                stroke={c}
+                strokeWidth="16"
+                strokeDasharray={`${((b - a) / 100) * C} ${C}`}
+                strokeDashoffset={-(a / 100) * C}
+                transform="rotate(-90 60 60)"
+              />
             ))}
           </svg>
           <ul className="pl-list" style={{ fontSize: "0.72rem", gap: 3 }}>
-            <li><span className="swatch" style={{ background: "var(--accent)", width: 9, height: 9 }} />Venue &amp; catering</li>
-            <li><span className="swatch" style={{ background: "var(--accent-2)", width: 9, height: 9 }} />Decor &amp; flowers</li>
-            <li><span className="swatch" style={{ background: "var(--accent-3)", width: 9, height: 9 }} />Photography</li>
+            <li>
+              <span className="swatch" style={{ background: "var(--accent)", width: 9, height: 9 }} />
+              Venue &amp; catering
+            </li>
+            <li>
+              <span className="swatch" style={{ background: "var(--accent-2)", width: 9, height: 9 }} />
+              Decor &amp; flowers
+            </li>
+            <li>
+              <span className="swatch" style={{ background: "var(--accent-3)", width: 9, height: 9 }} />
+              Photography
+            </li>
           </ul>
         </div>
       </div>
-      <div className="pl-badge"><b>104</b><span>days to go</span></div>
+      <div className="pl-badge">
+        <b>104</b>
+        <span>days to go</span>
+      </div>
     </Tilt>
   );
 }

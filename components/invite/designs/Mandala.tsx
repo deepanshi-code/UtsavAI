@@ -19,15 +19,43 @@ export function Mandala({ p, r, text, facts }: DesignProps) {
         k % 3 === 2 ? (
           <circle key={`${k}-${i}`} cx={x} cy={y} r={size / 4} fill={color} opacity={0.85} />
         ) : (
-          <path key={`${k}-${i}`} d={`M0 ${-size} Q${size * 0.55} 0 0 ${size} Q${-size * 0.55} 0 0 ${-size}Z`} transform={`translate(${x} ${y}) rotate(${(a * 180) / Math.PI + 90})`} fill="none" stroke={color} strokeWidth={2.5} opacity={0.9} />
+          <path
+            key={`${k}-${i}`}
+            d={`M0 ${-size} Q${size * 0.55} 0 0 ${size} Q${-size * 0.55} 0 0 ${-size}Z`}
+            transform={`translate(${x} ${y}) rotate(${(a * 180) / Math.PI + 90})`}
+            fill="none"
+            stroke={color}
+            strokeWidth={2.5}
+            opacity={0.9}
+          />
         ),
       );
     }
-    items.push(<circle key={`ring-${k}`} r={radius + size + 8} fill="none" stroke={p.accent} strokeWidth={1.2} strokeDasharray={k % 2 ? "2 10" : "none"} opacity={0.45} />);
+    items.push(
+      <circle
+        key={`ring-${k}`}
+        r={radius + size + 8}
+        fill="none"
+        stroke={p.accent}
+        strokeWidth={1.2}
+        strokeDasharray={k % 2 ? "2 10" : "none"}
+        opacity={0.45}
+      />,
+    );
   }
   return (
     <>
-      <rect x={28} y={28} width={CARD_W - 56} height={CARD_H - 56} rx={18} fill="none" stroke={p.accent} strokeWidth={2} opacity={0.6} />
+      <rect
+        x={28}
+        y={28}
+        width={CARD_W - 56}
+        height={CARD_H - 56}
+        rx={18}
+        fill="none"
+        stroke={p.accent}
+        strokeWidth={2}
+        opacity={0.6}
+      />
       <g transform={`translate(${CX} 270)`}>
         <circle r={46} fill={p.accent} opacity={0.9} />
         <circle r={30} fill={p.bg} />

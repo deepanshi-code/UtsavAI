@@ -22,7 +22,12 @@ export const viewport: Viewport = { themeColor: "#faf7f2" };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // suppressHydrationWarning: the boot script may set data-theme before React hydrates.
-    <html lang="en" data-theme="paper" className={`${fraunces.variable} ${inter.variable} ${caveat.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      data-theme="paper"
+      className={`${fraunces.variable} ${inter.variable} ${caveat.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
@@ -34,11 +39,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="container row">
               <span>UtsavAI · AI celebration planner</span>
               <span className="spacer" />
-              <Link href="/plans" className="nav-link">My plans</Link>
-              <Link href="/plan/new" className="nav-link">New plan</Link>
+              <Link href="/plans" className="nav-link">
+                My plans
+              </Link>
+              <Link href="/plan/new" className="nav-link">
+                New plan
+              </Link>
             </div>
-            <div className="container small" style={{ marginTop: 8 }}>
-              AI-generated plans are a starting point. Verify prices and availability with vendors before booking.
+            <div className="container small mt-8">
+              AI-generated plans are a starting point. Verify prices and availability with vendors before
+              booking.
             </div>
           </footer>
         </ToastProvider>

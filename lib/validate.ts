@@ -1,4 +1,11 @@
-import { EVENT_TYPES, STAY_TIERS, type EventType, type FunctionInput, type PlanInput, type StayInput } from "./types";
+import {
+  EVENT_TYPES,
+  STAY_TIERS,
+  type EventType,
+  type FunctionInput,
+  type PlanInput,
+  type StayInput,
+} from "./types";
 
 export const LIMITS = {
   minBudget: 1_000,

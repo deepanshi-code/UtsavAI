@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { formatDate } from "@/lib/format";
-import { buildInvitePrompt, cleanOptions, defaultInvite, designFor, inviteFacts, MAIN_KEY, occasionKey, occasionsFor } from "@/lib/invite";
+import {
+  buildInvitePrompt,
+  cleanOptions,
+  defaultInvite,
+  designFor,
+  inviteFacts,
+  MAIN_KEY,
+  occasionKey,
+  occasionsFor,
+} from "@/lib/invite";
 import { rankTop } from "@/lib/places";
 import type { PlanInput, ScheduleItem } from "@/lib/types";
 
@@ -18,9 +27,33 @@ const input: PlanInput = {
 
 const schedule: ScheduleItem[] = [
   { day: 1, time: "11:00 AM", title: "Welcome lunch", details: "" }, // minor slot: no theme/decor
-  { day: 1, time: "11:30 AM", title: "Haldi", details: "", guests: 80, theme: "Sunshine yellow", decor: "Marigolds" },
-  { day: 2, time: "7:00 PM", title: "Sangeet", details: "", guests: 220, theme: "Bollywood retro", decor: "Disco" },
-  { day: 3, time: "10:00 AM", title: "Wedding ceremony", details: "", guests: 220, theme: "Royal heritage", decor: "Gold" },
+  {
+    day: 1,
+    time: "11:30 AM",
+    title: "Haldi",
+    details: "",
+    guests: 80,
+    theme: "Sunshine yellow",
+    decor: "Marigolds",
+  },
+  {
+    day: 2,
+    time: "7:00 PM",
+    title: "Sangeet",
+    details: "",
+    guests: 220,
+    theme: "Bollywood retro",
+    decor: "Disco",
+  },
+  {
+    day: 3,
+    time: "10:00 AM",
+    title: "Wedding ceremony",
+    details: "",
+    guests: 220,
+    theme: "Royal heritage",
+    decor: "Gold",
+  },
 ];
 
 describe("invitations per function", () => {
@@ -50,9 +83,15 @@ describe("invitations per function", () => {
   });
 
   it("gives kids' birthdays the party card and other birthdays the watercolour", () => {
-    expect(designFor("birthday", undefined, "Kids' party, Pure veg")).toEqual({ template: "party", palette: "candy" });
+    expect(designFor("birthday", undefined, "Kids' party, Pure veg")).toEqual({
+      template: "party",
+      palette: "candy",
+    });
     expect(designFor("birthday", undefined, "5th birthday")).toEqual({ template: "party", palette: "candy" });
-    expect(designFor("birthday", undefined, "60th, Surprise")).toEqual({ template: "watercolour", palette: "wash" });
+    expect(designFor("birthday", undefined, "60th, Surprise")).toEqual({
+      template: "watercolour",
+      palette: "wash",
+    });
     expect(designFor("birthday")).toEqual({ template: "watercolour", palette: "wash" });
   });
 
@@ -62,7 +101,9 @@ describe("invitations per function", () => {
     expect(f.dates).toBe(formatDate("2027-02-12"));
     expect(f.time).toBe("11:30 AM");
     expect(inviteFacts(input, cleanOptions({ time: "Noon" }), haldi).time).toBe("Noon");
-    expect(inviteFacts(input, cleanOptions({}), occasionsFor(input, schedule)[2]).dates).toBe(formatDate("2027-02-13"));
+    expect(inviteFacts(input, cleanOptions({}), occasionsFor(input, schedule)[2]).dates).toBe(
+      formatDate("2027-02-13"),
+    );
     // The main card covers the whole range.
     expect(inviteFacts(input, cleanOptions({})).dates).toBe("12–14 Feb 2027");
   });
@@ -71,7 +112,9 @@ describe("invitations per function", () => {
     const sangeet = occasionsFor(input, schedule)[2];
     const p = buildInvitePrompt(input, { title: "", schedule }, cleanOptions({}), sangeet);
     // Includes the start time, so the wording doesn't call a 7 PM function an "afternoon".
-    expect(p).toContain("This card is for one function: Sangeet (day 2, starts 7:00 PM, theme: Bollywood retro, about 220 guests)");
+    expect(p).toContain(
+      "This card is for one function: Sangeet (day 2, starts 7:00 PM, theme: Bollywood retro, about 220 guests)",
+    );
     expect(p).not.toContain("Functions: Day 1");
     expect(defaultInvite(input, { title: "" }, sangeet).headline).toBe("Sangeet · You're Invited");
   });

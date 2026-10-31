@@ -61,5 +61,8 @@ export function tipsFor(type: EventType, seed: string): string[] {
   const list = [...BY_TYPE[type], ...GENERAL];
   let h = 0;
   for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return list.map((t, i) => ({ t, k: (h ^ (i * 2654435761)) >>> 0 })).sort((a, b) => a.k - b.k).map((x) => x.t);
+  return list
+    .map((t, i) => ({ t, k: (h ^ (i * 2654435761)) >>> 0 }))
+    .sort((a, b) => a.k - b.k)
+    .map((x) => x.t);
 }

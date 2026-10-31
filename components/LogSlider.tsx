@@ -37,4 +37,5 @@ export const roundBudget = (v: number) => {
   const step = v < 1_00_000 ? 1_000 : v < 10_00_000 ? 5_000 : 25_000;
   return Math.round(v / step) * step;
 };
-export const roundGuests = (v: number) => (v < 50 ? Math.round(v) : v < 300 ? Math.round(v / 5) * 5 : Math.round(v / 25) * 25);
+export const roundGuests = (v: number) =>
+  v < 50 ? Math.round(v) : v < 300 ? Math.round(v / 5) * 5 : Math.round(v / 25) * 25;

@@ -7,13 +7,29 @@ import { formatINR } from "@/lib/format";
 import type { BudgetItem } from "@/lib/types";
 
 // The first three follow the active theme; the rest are fixed, distinct hues that read on every theme.
-export const CATEGORY_COLORS = ["var(--accent)", "var(--accent-2)", "var(--accent-3)", "#2dd4bf", "#f59e0b", "#a3e635", "#fb7185", "#818cf8", "#22d3ee", "#c084fc", "#facc15", "#34d399"];
+export const CATEGORY_COLORS = [
+  "var(--accent)",
+  "var(--accent-2)",
+  "var(--accent-3)",
+  "#2dd4bf",
+  "#f59e0b",
+  "#a3e635",
+  "#fb7185",
+  "#818cf8",
+  "#22d3ee",
+  "#c084fc",
+  "#facc15",
+  "#34d399",
+];
 export const colorAt = (i: number) => CATEGORY_COLORS[i % CATEGORY_COLORS.length];
 
 function arc(cx: number, cy: number, r0: number, r1: number, a0: number, a1: number) {
   const p = (r: number, a: number) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
   const large = a1 - a0 > Math.PI ? 1 : 0;
-  const [x0, y0] = p(r1, a0), [x1, y1] = p(r1, a1), [x2, y2] = p(r0, a1), [x3, y3] = p(r0, a0);
+  const [x0, y0] = p(r1, a0),
+    [x1, y1] = p(r1, a1),
+    [x2, y2] = p(r0, a1),
+    [x3, y3] = p(r0, a0);
   return `M${x0} ${y0} A${r1} ${r1} 0 ${large} 1 ${x1} ${y1} L${x2} ${y2} A${r0} ${r0} 0 ${large} 0 ${x3} ${y3} Z`;
 }
 
@@ -33,17 +49,52 @@ export function BudgetDonut({ items, size = "full" }: { items: BudgetItem[]; siz
   const cur = active !== null ? items[active] : null;
 
   return (
-    <div className="donut-wrap" style={size === "compact" ? { gridTemplateColumns: "1fr", justifyItems: "center", maxWidth: 230, margin: "12px auto 0" } : undefined}>
-      <svg viewBox="0 0 200 200" className="donut" data-hover={active !== null} role="img" aria-label="Budget split by category">
+    <div
+      className="donut-wrap"
+      style={
+        size === "compact"
+          ? { gridTemplateColumns: "1fr", justifyItems: "center", maxWidth: 230, margin: "12px auto 0" }
+          : undefined
+      }
+    >
+      <svg
+        viewBox="0 0 200 200"
+        className="donut"
+        data-hover={active !== null}
+        role="img"
+        aria-label="Budget split by category"
+      >
         {slices.map(({ d, i }) =>
           d ? (
-            <path key={i} d={d} fill={colorAt(i)} data-active={active === i} onPointerEnter={() => setActive(i)} onPointerLeave={() => setActive(null)} />
+            <path
+              key={i}
+              d={d}
+              fill={colorAt(i)}
+              data-active={active === i}
+              onPointerEnter={() => setActive(i)}
+              onPointerLeave={() => setActive(null)}
+            />
           ) : null,
         )}
-        <text x="100" y="94" textAnchor="middle" fill="var(--muted)" fontSize="10" fontFamily="var(--font-body)">
+        <text
+          x="100"
+          y="94"
+          textAnchor="middle"
+          fill="var(--muted)"
+          fontSize="10"
+          fontFamily="var(--font-body)"
+        >
           {cur ? cur.category.slice(0, 22) : "Total"}
         </text>
-        <text x="100" y="114" textAnchor="middle" fill="var(--text)" fontSize="17" fontWeight="700" fontFamily="var(--font-display)">
+        <text
+          x="100"
+          y="114"
+          textAnchor="middle"
+          fill="var(--text)"
+          fontSize="17"
+          fontWeight="700"
+          fontFamily="var(--font-display)"
+        >
           {formatINR(cur ? cur.amount : sumBudget(items))}
         </text>
         {cur && (
@@ -77,7 +128,17 @@ export function BudgetDonut({ items, size = "full" }: { items: BudgetItem[]; siz
 }
 
 /** Number field that commits on blur/Enter, so typing "5" on the way to "50000" doesn't rebalance everything. */
-function AmountInput({ id, value, label, onCommit }: { id?: string; value: number; label: string; onCommit: (n: number) => void }) {
+function AmountInput({
+  id,
+  value,
+  label,
+  onCommit,
+}: {
+  id?: string;
+  value: number;
+  label: string;
+  onCommit: (n: number) => void;
+}) {
   const [draft, setDraft] = useState(String(value));
   useEffect(() => setDraft(String(value)), [value]);
   const commit = () => {
@@ -96,7 +157,10 @@ function AmountInput({ id, value, label, onCommit }: { id?: string; value: numbe
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => {
-        if (e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); }
+        if (e.key === "Enter") {
+          e.preventDefault();
+          e.currentTarget.blur();
+        }
       }}
     />
   );
@@ -126,16 +190,31 @@ export default function BudgetPanel({ items, total, guests, onChange }: Props) {
       </section>
 
       <section className="card" aria-labelledby="edit-h">
-        <div className="row" style={{ marginBottom: 12 }}>
+        <div className="row mb-12">
           <div>
-            <h3 id="edit-h" style={{ margin: 0 }}>Adjust the budget</h3>
-            <p className="muted small" style={{ margin: "4px 0 0" }}>
-              Change any amount and the unlocked categories rebalance to keep the total. Lock a category to keep its amount fixed.
+            <h3 className="m-0" id="edit-h">
+              Adjust the budget
+            </h3>
+            <p className="muted small m-0 mt-4">
+              Change any amount and the unlocked categories rebalance to keep the total. Lock a category to
+              keep its amount fixed.
             </p>
           </div>
           <span className="spacer" />
           {lockedCount > 0 && (
-            <button type="button" className="btn btn-sm no-print" onClick={() => apply(rebalance(items.map((i) => ({ ...i, locked: false })), total), total)}>
+            <button
+              type="button"
+              className="btn btn-sm no-print"
+              onClick={() =>
+                apply(
+                  rebalance(
+                    items.map((i) => ({ ...i, locked: false })),
+                    total,
+                  ),
+                  total,
+                )
+              }
+            >
               Unlock all ({lockedCount})
             </button>
           )}
@@ -144,15 +223,22 @@ export default function BudgetPanel({ items, total, guests, onChange }: Props) {
         <div className="row" style={{ marginBottom: 16, alignItems: "flex-end" }}>
           <div style={{ width: 200 }}>
             <label htmlFor="total">Total budget (₹)</label>
-            <AmountInput id="total" value={total} label="Total budget" onCommit={(t) => apply(rebalance(items, Math.round(t)), Math.round(t))} />
+            <AmountInput
+              id="total"
+              value={total}
+              label="Total budget"
+              onCommit={(t) => apply(rebalance(items, Math.round(t)), Math.round(t))}
+            />
           </div>
           <span className="badge">{formatINR(guests > 0 ? Math.round(total / guests) : 0)} per guest</span>
-          <span className="badge badge-ok" aria-live="polite">Allocated {formatINR(sumBudget(items))}</span>
+          <span className="badge badge-ok" aria-live="polite">
+            Allocated {formatINR(sumBudget(items))}
+          </span>
         </div>
 
         {overspend > 0 && (
-          <div className="alert alert-warn" role="alert" style={{ marginBottom: 12 }}>
-            <TriangleAlert size={20} aria-hidden="true" style={{ flex: "none" }} />
+          <div className="alert alert-warn mb-12" role="alert">
+            <TriangleAlert className="flex-none" size={20} aria-hidden="true" />
             Locked categories are {formatINR(overspend)} over the total. Raise the total or unlock a category.
           </div>
         )}
@@ -163,12 +249,21 @@ export default function BudgetPanel({ items, total, guests, onChange }: Props) {
             return (
               <div className="budget-row" role="row" key={it.category + idx}>
                 <div role="cell">
-                  <div className="cat"><span className="swatch" style={{ background: colorAt(idx) }} aria-hidden="true" />{it.category}</div>
-                  <div className="bar" aria-hidden="true"><span style={{ width: `${Math.min(100, pct)}%`, background: colorAt(idx) }} /></div>
+                  <div className="cat">
+                    <span className="swatch" style={{ background: colorAt(idx) }} aria-hidden="true" />
+                    {it.category}
+                  </div>
+                  <div className="bar" aria-hidden="true">
+                    <span style={{ width: `${Math.min(100, pct)}%`, background: colorAt(idx) }} />
+                  </div>
                   <span className="hint">{pct}% of total</span>
                 </div>
                 <div role="cell">
-                  <AmountInput value={it.amount} label={`${it.category} amount`} onCommit={(n) => apply(editCategory(items, idx, n, total), total)} />
+                  <AmountInput
+                    value={it.amount}
+                    label={`${it.category} amount`}
+                    onCommit={(n) => apply(editCategory(items, idx, n, total), total)}
+                  />
                 </div>
                 <div role="cell">
                   <button
@@ -177,12 +272,23 @@ export default function BudgetPanel({ items, total, guests, onChange }: Props) {
                     aria-pressed={!!it.locked}
                     aria-label={`${it.locked ? "Unlock" : "Lock"} ${it.category}`}
                     title={it.locked ? "Locked: won't change when rebalancing" : "Lock this amount"}
-                    onClick={() => onChange(items.map((x, n) => (n === idx ? { ...x, locked: !x.locked } : x)), total)}
+                    onClick={() =>
+                      onChange(
+                        items.map((x, n) => (n === idx ? { ...x, locked: !x.locked } : x)),
+                        total,
+                      )
+                    }
                   >
-                    {it.locked ? <Lock size={16} aria-hidden="true" /> : <LockOpen size={16} aria-hidden="true" />}
+                    {it.locked ? (
+                      <Lock size={16} aria-hidden="true" />
+                    ) : (
+                      <LockOpen size={16} aria-hidden="true" />
+                    )}
                   </button>
                 </div>
-                <div role="cell" className="notes">{it.notes}</div>
+                <div role="cell" className="notes">
+                  {it.notes}
+                </div>
               </div>
             );
           })}

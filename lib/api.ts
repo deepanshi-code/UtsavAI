@@ -1,7 +1,10 @@
 import type { EventPlan, PlanInput, PlanResponse } from "./types";
 
 /** Calls the plan API. Throws an Error with a user-facing message on failure. */
-export async function requestPlan(input: PlanInput, refine?: { instruction: string; previous: EventPlan }): Promise<PlanResponse> {
+export async function requestPlan(
+  input: PlanInput,
+  refine?: { instruction: string; previous: EventPlan },
+): Promise<PlanResponse> {
   const res = await fetch("/api/plan", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

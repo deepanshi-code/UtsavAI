@@ -37,12 +37,20 @@ export default function PlanPage() {
     return (
       <div className="page container">
         <div className="card empty">
-          <div className="big" aria-hidden="true"><SearchX size={40} strokeWidth={1.5} /></div>
+          <div className="big" aria-hidden="true">
+            <SearchX size={40} strokeWidth={1.5} />
+          </div>
           <h2>Plan not found</h2>
-          <p className="muted">Plans are saved in the browser they were made in. This one isn&apos;t in this browser.</p>
+          <p className="muted">
+            Plans are saved in the browser they were made in. This one isn&apos;t in this browser.
+          </p>
           <div className="row" style={{ justifyContent: "center", marginTop: 16 }}>
-            <Link href="/plans" className="btn">My plans</Link>
-            <Link href="/plan/new" className="btn btn-primary">Create a plan</Link>
+            <Link href="/plans" className="btn">
+              My plans
+            </Link>
+            <Link href="/plan/new" className="btn btn-primary">
+              Create a plan
+            </Link>
           </div>
         </div>
       </div>
@@ -51,8 +59,11 @@ export default function PlanPage() {
 
   return (
     <div className="page container">
-      <nav className="small faint no-print" aria-label="Breadcrumb" style={{ marginBottom: 16 }}>
-        <Link href="/plans" className="nav-link" style={{ padding: 0 }}>My plans</Link> / <span>{saved.plan.title}</span>
+      <nav className="small faint no-print mb-16" aria-label="Breadcrumb">
+        <Link href="/plans" className="nav-link" style={{ padding: 0 }}>
+          My plans
+        </Link>{" "}
+        / <span>{saved.plan.title}</span>
       </nav>
       <PlanDashboard
         saved={saved}

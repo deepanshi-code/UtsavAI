@@ -76,9 +76,10 @@ npm run dev                  # http://localhost:3000
 npm test          # 89 unit tests: budget maths, validation, prompts, normalisation, hedged model calls, rate limiting, multi-day schedule, venues, invitations, .ics, share links, progress
 npm run typecheck
 npm run lint      # ESLint (Next.js core-web-vitals + TypeScript rules), zero warnings allowed
+npm run format    # Prettier
 ```
 
-GitHub Actions runs lint, typecheck, tests and a production build on every push.
+GitHub Actions checks formatting, lint, types, tests and a production build on every push.
 
 ## Project layout
 ```
@@ -86,7 +87,10 @@ app/                    pages and API routes (plan, ideas, invite, places)
 components/plan/        plan dashboard and its tabs
 components/invite/      invitation card: catalog, fonts, layout engine, ornaments, PNG export
 components/invite/designs/  one file per card design
-lib/                    Gemini calls and prompts, validation, budget maths, storage, sharing
+lib/gemini.ts           Gemini client: model chain, hedged requests, retries
+lib/prompts.ts          prompts; lib/planSchema.ts: structured-output schemas
+lib/normalise.ts        validation of everything the model returns
+lib/                    also input validation, budget maths, storage, sharing, calendar export
 tests/                  Vitest unit tests
 ```
 

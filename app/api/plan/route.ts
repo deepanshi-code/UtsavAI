@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { GeminiBusyError, generatePlan, normalisePlan } from "@/lib/gemini";
+import { GeminiBusyError, generatePlan } from "@/lib/gemini";
+import { normalisePlan } from "@/lib/normalise";
 import { clientIp, createLimiter } from "@/lib/rateLimit";
 import { samplePlan } from "@/lib/sample";
 import type { EventPlan, PlanResponse } from "@/lib/types";
@@ -39,7 +40,11 @@ export async function POST(req: Request) {
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return NextResponse.json<PlanResponse>({ plan: samplePlan(input), budget: input.budget, source: "sample" });
+    return NextResponse.json<PlanResponse>({
+      plan: samplePlan(input),
+      budget: input.budget,
+      source: "sample",
+    });
   }
 
   try {

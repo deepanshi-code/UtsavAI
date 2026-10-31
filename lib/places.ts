@@ -61,7 +61,9 @@ export async function searchPlaces(query: string, apiKey: string): Promise<Place
   });
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
-    throw Object.assign(new Error(`Places API ${res.status}: ${detail.slice(0, 200)}`), { status: res.status });
+    throw Object.assign(new Error(`Places API ${res.status}: ${detail.slice(0, 200)}`), {
+      status: res.status,
+    });
   }
   const data = (await res.json()) as { places?: ApiPlace[] };
   return toResults(data.places);
@@ -72,9 +74,11 @@ export async function searchPlaces(query: string, apiKey: string): Promise<Place
  * 8 reviews doesn't beat a 4.6 from 900. Places with very few reviews go last.
  */
 export function rankTop(results: PlaceResult[], n: number): PlaceResult[] {
-  const score = (p: PlaceResult) => (p.rating ?? 0) * Math.log10((p.reviews ?? 0) + 1) * ((p.reviews ?? 0) >= 10 ? 1 : 0.5);
+  const score = (p: PlaceResult) =>
+    (p.rating ?? 0) * Math.log10((p.reviews ?? 0) + 1) * ((p.reviews ?? 0) >= 10 ? 1 : 0.5);
   return [...results].sort((a, b) => score(b) - score(a)).slice(0, n);
 }
 
 /** Documented, keyless Google Maps search link (https://developers.google.com/maps/documentation/urls). */
-export const mapsSearchUrl = (q: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+export const mapsSearchUrl = (q: string) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;

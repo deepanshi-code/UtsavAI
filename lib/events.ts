@@ -1,7 +1,10 @@
 import { Briefcase, Cake, Flame, Gem, Sparkles, Users, type LucideIcon } from "lucide-react";
 import type { EventType } from "./types";
 
-export const EVENT_META: Record<EventType, { label: string; icon: LucideIcon; blurb: string; presets: string[]; milestone?: string }> = {
+export const EVENT_META: Record<
+  EventType,
+  { label: string; icon: LucideIcon; blurb: string; presets: string[]; milestone?: string }
+> = {
   wedding: {
     label: "Wedding",
     icon: Gem,

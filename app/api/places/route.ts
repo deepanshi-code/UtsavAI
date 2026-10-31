@@ -15,15 +15,23 @@ const limited = createLimiter(40);
 export async function GET(req: Request) {
   const url = new URL(req.url);
   // ?status=1 lets the UI know whether real listings are available, without a billed call.
-  if (url.searchParams.has("status")) return NextResponse.json({ configured: !!process.env.GOOGLE_MAPS_API_KEY });
-  const q = (url.searchParams.get("q") ?? "").replace(/[^\p{L}\p{N} &'-]/gu, " ").trim().slice(0, 60);
-  const city = (url.searchParams.get("city") ?? "").replace(/[^\p{L}\p{N} ,.'-]/gu, " ").trim().slice(0, 80);
+  if (url.searchParams.has("status"))
+    return NextResponse.json({ configured: !!process.env.GOOGLE_MAPS_API_KEY });
+  const q = (url.searchParams.get("q") ?? "")
+    .replace(/[^\p{L}\p{N} &'-]/gu, " ")
+    .trim()
+    .slice(0, 60);
+  const city = (url.searchParams.get("city") ?? "")
+    .replace(/[^\p{L}\p{N} ,.'-]/gu, " ")
+    .trim()
+    .slice(0, 80);
   if (!q || !city) return NextResponse.json({ error: "Missing search or city." }, { status: 400 });
 
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) return NextResponse.json({ configured: false, results: [] });
 
-  if (limited(clientIp(req))) return NextResponse.json({ error: "Too many searches. Please wait a minute." }, { status: 429 });
+  if (limited(clientIp(req)))
+    return NextResponse.json({ error: "Too many searches. Please wait a minute." }, { status: 429 });
 
   // ?top=4 returns only the best-rated few (rating weighted by review count).
   const top = Math.min(10, Math.max(0, Number(url.searchParams.get("top")) || 0));
@@ -32,7 +40,8 @@ export async function GET(req: Request) {
   const query = `${q} in ${city}`;
   const key = query.toLowerCase();
   const hit = cache.get(key);
-  if (hit && Date.now() - hit.at < CACHE_MS) return NextResponse.json({ configured: true, results: shape(hit.results) });
+  if (hit && Date.now() - hit.at < CACHE_MS)
+    return NextResponse.json({ configured: true, results: shape(hit.results) });
 
   try {
     const results = await searchPlaces(query, apiKey);

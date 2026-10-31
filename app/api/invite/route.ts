@@ -1,7 +1,14 @@
 import { Type, type Schema } from "@google/genai";
 import { NextResponse } from "next/server";
 import { GeminiBusyError, generateJson } from "@/lib/gemini";
-import { buildInvitePrompt, cleanOptions, defaultInvite, normaliseInvite, type InviteOccasion, type InviteText } from "@/lib/invite";
+import {
+  buildInvitePrompt,
+  cleanOptions,
+  defaultInvite,
+  normaliseInvite,
+  type InviteOccasion,
+  type InviteText,
+} from "@/lib/invite";
 import { clientIp, createLimiter } from "@/lib/rateLimit";
 import { validateInput } from "@/lib/validate";
 
@@ -14,17 +21,34 @@ const limited = createLimiter(20);
 const INVITE_SCHEMA: Schema = {
   type: Type.OBJECT,
   properties: {
-    headline: { type: Type.STRING, description: "Short top line, max 6 words, e.g. 'You're Invited' or 'शुभ विवाह'." },
-    names: { type: Type.STRING, description: "Who/what is being celebrated, from the provided name only. Empty if none given." },
-    body: { type: Type.STRING, description: "2-3 sentence invitation, max 45 words, without date, time, venue, RSVP or host names." },
-    details: { type: Type.STRING, description: "Optional extra line(s), e.g. the functions of a multi-day event. Empty string if nothing to add." },
-    closing: { type: Type.STRING, description: "One short blessing or sign-off line, without names or RSVP details." },
+    headline: {
+      type: Type.STRING,
+      description: "Short top line, max 6 words, e.g. 'You're Invited' or 'शुभ विवाह'.",
+    },
+    names: {
+      type: Type.STRING,
+      description: "Who/what is being celebrated, from the provided name only. Empty if none given.",
+    },
+    body: {
+      type: Type.STRING,
+      description: "2-3 sentence invitation, max 45 words, without date, time, venue, RSVP or host names.",
+    },
+    details: {
+      type: Type.STRING,
+      description:
+        "Optional extra line(s), e.g. the functions of a multi-day event. Empty string if nothing to add.",
+    },
+    closing: {
+      type: Type.STRING,
+      description: "One short blessing or sign-off line, without names or RSVP details.",
+    },
   },
   required: ["headline", "names", "body", "details", "closing"],
 };
 
 export async function POST(req: Request) {
-  if (limited(clientIp(req))) return NextResponse.json({ error: "Too many requests. Please wait a minute." }, { status: 429 });
+  if (limited(clientIp(req)))
+    return NextResponse.json({ error: "Too many requests. Please wait a minute." }, { status: 429 });
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -43,11 +67,19 @@ export async function POST(req: Request) {
     title: typeof p.title === "string" ? p.title.slice(0, 100) : "",
     schedule: (Array.isArray(p.schedule) ? p.schedule : [])
       .slice(0, 30)
-      .map((s: Record<string, unknown>) => ({ day: Number(s?.day) || 1, title: String(s?.title ?? "").slice(0, 60), time: "", details: "" })),
+      .map((s: Record<string, unknown>) => ({
+        day: Number(s?.day) || 1,
+        title: String(s?.title ?? "").slice(0, 60),
+        time: "",
+        details: "",
+      })),
   };
 
   // Optional: the one function this card is for.
-  const o = (body.occasion && typeof body.occasion === "object" ? body.occasion : null) as Record<string, unknown> | null;
+  const o = (body.occasion && typeof body.occasion === "object" ? body.occasion : null) as Record<
+    string,
+    unknown
+  > | null;
   const occasion: InviteOccasion | undefined =
     o && typeof o.title === "string" && o.title.trim()
       ? {
@@ -62,14 +94,26 @@ export async function POST(req: Request) {
 
   const fallback = defaultInvite(input, plan, occasion);
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return NextResponse.json<{ invite: InviteText; source: string }>({ invite: fallback, source: "template" });
+  if (!apiKey)
+    return NextResponse.json<{ invite: InviteText; source: string }>({
+      invite: fallback,
+      source: "template",
+    });
 
   try {
-    const raw = await generateJson(buildInvitePrompt(input, plan, options, occasion), INVITE_SCHEMA, apiKey, 0.9);
+    const raw = await generateJson(
+      buildInvitePrompt(input, plan, options, occasion),
+      INVITE_SCHEMA,
+      apiKey,
+      0.9,
+    );
     return NextResponse.json({ invite: normaliseInvite(raw, fallback), source: "gemini" });
   } catch (err) {
     console.error("invite generation failed", err);
-    const msg = err instanceof GeminiBusyError ? "Gemini is very busy right now. Please try again in a minute." : "Couldn't write the invitation right now.";
+    const msg =
+      err instanceof GeminiBusyError
+        ? "Gemini is very busy right now. Please try again in a minute."
+        : "Couldn't write the invitation right now.";
     return NextResponse.json({ error: msg }, { status: err instanceof GeminiBusyError ? 503 : 502 });
   }
 }

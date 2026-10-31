@@ -22,10 +22,16 @@ export default function Nav() {
     <header className="nav no-print">
       <div className="container nav-inner">
         <Link href="/" className="logo" aria-label="UtsavAI home">
-          <span className="logo-mark" aria-hidden="true"><NotebookPen size={18} strokeWidth={2} /></span>
-          <span>Utsav<span className="grad-text">AI</span></span>
+          <span className="logo-mark" aria-hidden="true">
+            <NotebookPen size={18} strokeWidth={2} />
+          </span>
+          <span>
+            Utsav<span className="grad-text">AI</span>
+          </span>
         </Link>
-        <span className="nav-theme"><ThemePicker /></span>
+        <span className="nav-theme">
+          <ThemePicker />
+        </span>
         <button
           type="button"
           className="btn btn-ghost btn-icon nav-toggle"
@@ -38,7 +44,13 @@ export default function Nav() {
         </button>
         <nav id="nav-links" className="nav-links" data-open={open} aria-label="Main">
           {LINKS.map((l) => (
-            <Link key={l.href} href={l.href} className="nav-link" aria-current={path === l.href ? "page" : undefined} onClick={() => setOpen(false)}>
+            <Link
+              key={l.href}
+              href={l.href}
+              className="nav-link"
+              aria-current={path === l.href ? "page" : undefined}
+              onClick={() => setOpen(false)}
+            >
               {l.label}
             </Link>
           ))}

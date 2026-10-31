@@ -1,6 +1,17 @@
 "use client";
 
-import { ArrowRight, CalendarPlus, Mail, Pencil, Printer, Share2, Trash, TriangleAlert, WandSparkles, X } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarPlus,
+  Mail,
+  Pencil,
+  Printer,
+  Share2,
+  Trash,
+  TriangleAlert,
+  WandSparkles,
+  X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Tilt from "../Tilt";
 import { useToast } from "../Toast";
@@ -18,8 +29,23 @@ import type { SavedPlan } from "@/lib/store";
 const TABS = ["Overview", "Schedule", "Venues", "Budget", "Timeline", "Vendors", "Ideas"] as const;
 type Tab = (typeof TABS)[number];
 // Display names; the plain ids above stay stable for element ids and state.
-const TAB_LABEL: Record<Tab, string> = { Overview: "Overview", Schedule: "Functions", Venues: "Venues", Budget: "Budget", Timeline: "Tasks", Vendors: "Vendors", Ideas: "Ideas" };
-const REFINE_SUGGESTIONS = ["Cut the budget by 20%", "Make it eco-friendly", "Add a kids' corner", "More traditional", "Make it a home event", "Add live music"];
+const TAB_LABEL: Record<Tab, string> = {
+  Overview: "Overview",
+  Schedule: "Functions",
+  Venues: "Venues",
+  Budget: "Budget",
+  Timeline: "Tasks",
+  Vendors: "Vendors",
+  Ideas: "Ideas",
+};
+const REFINE_SUGGESTIONS = [
+  "Cut the budget by 20%",
+  "Make it eco-friendly",
+  "Add a kids' corner",
+  "More traditional",
+  "Make it a home event",
+  "Add live music",
+];
 
 function download(filename: string, text: string, type: string) {
   const url = URL.createObjectURL(new Blob([text], { type }));
@@ -68,7 +94,12 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
   const vendorsDone = plan.vendors.filter((v) => v.done).length;
   const today = todayIso();
   const upcoming = plan.timeline.filter((t) => !t.done).slice(0, 4);
-  const slug = (plan.title || "event").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "event";
+  const slug =
+    (plan.title || "event")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 40) || "event";
 
   useEffect(() => {
     if (!refineOpen) return;
@@ -87,8 +118,10 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
     latest.current = next;
     onChange(next);
   };
-  const update = (p: (plan: SavedPlan["plan"]) => Partial<SavedPlan["plan"]>, i: Partial<SavedPlan["input"]> = {}) =>
-    change((cur) => ({ ...cur, plan: { ...cur.plan, ...p(cur.plan) }, input: { ...cur.input, ...i } }));
+  const update = (
+    p: (plan: SavedPlan["plan"]) => Partial<SavedPlan["plan"]>,
+    i: Partial<SavedPlan["input"]> = {},
+  ) => change((cur) => ({ ...cur, plan: { ...cur.plan, ...p(cur.plan) }, input: { ...cur.input, ...i } }));
 
   const share = async () => {
     const url = `${location.origin}/share#p=${encodeShare({ input, plan })}`;
@@ -105,7 +138,12 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
     setRefining(true);
     try {
       const res = await requestPlan(input, { instruction: instruction.trim(), previous: plan });
-      change((cur) => ({ ...cur, plan: carryProgress(cur.plan, res.plan), input: { ...cur.input, budget: res.budget }, source: res.source }));
+      change((cur) => ({
+        ...cur,
+        plan: carryProgress(cur.plan, res.plan),
+        input: { ...cur.input, budget: res.budget },
+        source: res.source,
+      }));
       setRefineOpen(false);
       setRefineText("");
       toast(done, "success");
@@ -145,7 +183,16 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
   }
 
   const onTabKey = (e: React.KeyboardEvent, i: number) => {
-    const n = e.key === "ArrowRight" ? (i + 1) % TABS.length : e.key === "ArrowLeft" ? (i - 1 + TABS.length) % TABS.length : e.key === "Home" ? 0 : e.key === "End" ? TABS.length - 1 : -1;
+    const n =
+      e.key === "ArrowRight"
+        ? (i + 1) % TABS.length
+        : e.key === "ArrowLeft"
+          ? (i - 1 + TABS.length) % TABS.length
+          : e.key === "Home"
+            ? 0
+            : e.key === "End"
+              ? TABS.length - 1
+              : -1;
     if (n < 0) return;
     e.preventDefault();
     setTab(TABS[n]);
@@ -166,30 +213,92 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
       <div className="dash-head">
         <div style={{ flex: "1 1 420px" }}>
           <div className="row">
-            <span className="badge badge-accent"><meta.icon size={14} aria-hidden="true" /> {meta.label}</span>
-            {saved.source === "sample" && <span className="badge badge-warn">Sample: no API key configured</span>}
+            <span className="badge badge-accent">
+              <meta.icon size={14} aria-hidden="true" /> {meta.label}
+            </span>
+            {saved.source === "sample" && (
+              <span className="badge badge-warn">Sample: no API key configured</span>
+            )}
           </div>
           <h1>{plan.title}</h1>
-          <p className="muted" style={{ margin: 0 }}>
-            {formatDateRange(input.date, eventDays)}{eventDays > 1 ? ` (${eventDays} days)` : ""} · {input.city} · {input.guests} guests
+          <p className="muted m-0">
+            {formatDateRange(input.date, eventDays)}
+            {eventDays > 1 ? ` (${eventDays} days)` : ""} · {input.city} · {input.guests} guests
           </p>
         </div>
         <div className="row no-print">
-          {editHref && <a className="btn" href={editHref}><Pencil size={16} aria-hidden="true" /> Edit details</a>}
-          <button type="button" className="btn btn-primary" onClick={() => setRefineOpen(true)}><WandSparkles size={17} aria-hidden="true" /> Refine with AI</button>
-          {inviteHref && <a className="btn" href={inviteHref}><Mail size={17} aria-hidden="true" /> Invitation</a>}
-          <button type="button" className="btn" onClick={share}><Share2 size={17} aria-hidden="true" /> Share</button>
-          <button type="button" className="btn btn-icon" title="Add timeline to calendar" aria-label="Download calendar file (.ics)" onClick={() => { download(`${slug}.ics`, buildIcs(plan.title, input.date, plan.timeline, new Date(), plan.schedule), "text/calendar"); toast("Calendar file downloaded. Open it to add the tasks.", "success"); }}><CalendarPlus size={18} aria-hidden="true" /></button>
-          <button type="button" className="btn btn-icon" title="Print or save as PDF" aria-label="Print or save as PDF" onClick={() => window.print()}><Printer size={18} aria-hidden="true" /></button>
-          {onDelete && <button type="button" className="btn btn-icon btn-danger" title="Delete plan" aria-label="Delete plan" onClick={onDelete}><Trash size={18} aria-hidden="true" /></button>}
+          {editHref && (
+            <a className="btn" href={editHref}>
+              <Pencil size={16} aria-hidden="true" /> Edit details
+            </a>
+          )}
+          <button type="button" className="btn btn-primary" onClick={() => setRefineOpen(true)}>
+            <WandSparkles size={17} aria-hidden="true" /> Refine with AI
+          </button>
+          {inviteHref && (
+            <a className="btn" href={inviteHref}>
+              <Mail size={17} aria-hidden="true" /> Invitation
+            </a>
+          )}
+          <button type="button" className="btn" onClick={share}>
+            <Share2 size={17} aria-hidden="true" /> Share
+          </button>
+          <button
+            type="button"
+            className="btn btn-icon"
+            title="Add timeline to calendar"
+            aria-label="Download calendar file (.ics)"
+            onClick={() => {
+              download(
+                `${slug}.ics`,
+                buildIcs(plan.title, input.date, plan.timeline, new Date(), plan.schedule),
+                "text/calendar",
+              );
+              toast("Calendar file downloaded. Open it to add the tasks.", "success");
+            }}
+          >
+            <CalendarPlus size={18} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="btn btn-icon"
+            title="Print or save as PDF"
+            aria-label="Print or save as PDF"
+            onClick={() => window.print()}
+          >
+            <Printer size={18} aria-hidden="true" />
+          </button>
+          {onDelete && (
+            <button
+              type="button"
+              className="btn btn-icon btn-danger"
+              title="Delete plan"
+              aria-label="Delete plan"
+              onClick={onDelete}
+            >
+              <Trash size={18} aria-hidden="true" />
+            </button>
+          )}
         </div>
       </div>
 
       <div className="stat-grid">
         {[
-          { k: "Countdown", v: days > 0 ? `${days} days` : days === 0 ? "Today" : "Done", s: formatDateRange(input.date, eventDays) },
-          { k: "Budget", v: formatINR(input.budget), s: `${formatINR(input.guests ? Math.round(input.budget / input.guests) : 0)} per guest` },
-          { k: "Tasks done", v: `${tasksDone}/${plan.timeline.length}`, s: tasksDone === plan.timeline.length ? "All complete" : "on the timeline" },
+          {
+            k: "Countdown",
+            v: days > 0 ? `${days} days` : days === 0 ? "Today" : "Done",
+            s: formatDateRange(input.date, eventDays),
+          },
+          {
+            k: "Budget",
+            v: formatINR(input.budget),
+            s: `${formatINR(input.guests ? Math.round(input.budget / input.guests) : 0)} per guest`,
+          },
+          {
+            k: "Tasks done",
+            v: `${tasksDone}/${plan.timeline.length}`,
+            s: tasksDone === plan.timeline.length ? "All complete" : "on the timeline",
+          },
           { k: "Vendors booked", v: `${vendorsDone}/${plan.vendors.length}`, s: "booked" },
         ].map((st) => (
           <Tilt key={st.k} className="card stat" max={4}>
@@ -206,7 +315,9 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
         {TABS.map((t, i) => (
           <button
             key={t}
-            ref={(el) => { tabRefs.current[i] = el; }}
+            ref={(el) => {
+              tabRefs.current[i] = el;
+            }}
             type="button"
             role="tab"
             id={`tab-${t}`}
@@ -224,11 +335,17 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
       </div>
 
       {/* All panels stay in the DOM (hidden) so printing includes every section. */}
-      <div role="tabpanel" id="panel-Overview" aria-labelledby="tab-Overview" hidden={tab !== "Overview"} className="tab-panel">
+      <div
+        role="tabpanel"
+        id="panel-Overview"
+        aria-labelledby="tab-Overview"
+        hidden={tab !== "Overview"}
+        className="tab-panel"
+      >
         {/* Bridges the page's h1 and the panels' h3 cards for screen-reader navigation. */}
         <h2 className="sr-only">{TAB_LABEL["Overview"]}</h2>
         {plan.plannerNote && (
-          <section className="card planner-note" style={{ marginBottom: 20 }} aria-label="A note from your planner">
+          <section className="card planner-note mb-20" aria-label="A note from your planner">
             <span className="eyebrow">From your planner</span>
             <p>{plan.plannerNote}</p>
           </section>
@@ -238,12 +355,14 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
             <h3>Summary</h3>
             <p className="muted">{plan.summary}</p>
             {plan.risks.length > 0 && (
-              <div className="alert alert-warn" style={{ marginTop: 16 }}>
-                <TriangleAlert size={20} aria-hidden="true" style={{ flex: "none" }} />
+              <div className="alert alert-warn mt-16">
+                <TriangleAlert className="flex-none" size={20} aria-hidden="true" />
                 <div>
                   <strong>Watch out for</strong>
                   <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
-                    {plan.risks.map((r, i) => <li key={i}>{r}</li>)}
+                    {plan.risks.map((r, i) => (
+                      <li key={i}>{r}</li>
+                    ))}
                   </ul>
                 </div>
               </div>
@@ -253,26 +372,40 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
             <div className="row">
               <h3 style={{ margin: 0 }}>Budget at a glance</h3>
               <span className="spacer" />
-              <button type="button" className="btn btn-sm btn-ghost no-print" onClick={() => setTab("Budget")}>Edit <ArrowRight size={14} aria-hidden="true" /></button>
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost no-print"
+                onClick={() => setTab("Budget")}
+              >
+                Edit <ArrowRight size={14} aria-hidden="true" />
+              </button>
             </div>
             <BudgetDonut items={plan.budget} size="compact" />
           </section>
         </div>
-        <section className="card" style={{ marginTop: 20 }}>
+        <section className="card mt-20">
           <div className="row">
             <h3 style={{ margin: 0 }}>Up next</h3>
             <span className="spacer" />
-            <button type="button" className="btn btn-sm btn-ghost no-print" onClick={() => setTab("Timeline")}>All tasks <ArrowRight size={14} aria-hidden="true" /></button>
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost no-print"
+              onClick={() => setTab("Timeline")}
+            >
+              All tasks <ArrowRight size={14} aria-hidden="true" />
+            </button>
           </div>
           {upcoming.length === 0 ? (
-            <p className="muted" style={{ marginTop: 12 }}>Every task is complete. Enjoy the celebration.</p>
+            <p className="muted mt-12">Every task is complete. Enjoy the celebration.</p>
           ) : (
-            <ul className="legend" style={{ marginTop: 12 }}>
+            <ul className="legend mt-12">
               {upcoming.map((t, i) => {
                 const d = taskDate(input.date, t.daysBefore);
                 return (
                   <li key={i}>
-                    <span className={`tl-when ${d < today ? "overdue" : ""}`} style={{ minWidth: 130 }}>{formatDate(d)}</span>
+                    <span className={`tl-when ${d < today ? "overdue" : ""}`} style={{ minWidth: 130 }}>
+                      {formatDate(d)}
+                    </span>
                     <span style={{ flex: 1 }}>{t.task}</span>
                     <span className="badge">{t.owner}</span>
                   </li>
@@ -283,8 +416,13 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
         </section>
       </div>
 
-      <div role="tabpanel" id="panel-Schedule" aria-labelledby="tab-Schedule" hidden={tab !== "Schedule"} className="tab-panel">
-
+      <div
+        role="tabpanel"
+        id="panel-Schedule"
+        aria-labelledby="tab-Schedule"
+        hidden={tab !== "Schedule"}
+        className="tab-panel"
+      >
         <h2 className="sr-only">{TAB_LABEL["Schedule"]}</h2>
         <SchedulePanel
           start={input.date}
@@ -297,14 +435,31 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
       </div>
 
       {/* The map iframe only mounts when the tab is opened, so it costs nothing until needed. */}
-      <div role="tabpanel" id="panel-Venues" aria-labelledby="tab-Venues" hidden={tab !== "Venues"} className="tab-panel no-print">
+      <div
+        role="tabpanel"
+        id="panel-Venues"
+        aria-labelledby="tab-Venues"
+        hidden={tab !== "Venues"}
+        className="tab-panel no-print"
+      >
         <h2 className="sr-only">{TAB_LABEL["Venues"]}</h2>
-        {tab === "Venues" && <VenuesPanel city={input.city} eventType={input.eventType} venueTypes={plan.venueTypes} />}
-        {plan.stay && <div style={{ marginTop: 20 }}><StayPanel stay={plan.stay} city={input.city} /></div>}
+        {tab === "Venues" && (
+          <VenuesPanel city={input.city} eventType={input.eventType} venueTypes={plan.venueTypes} />
+        )}
+        {plan.stay && (
+          <div style={{ marginTop: 20 }}>
+            <StayPanel stay={plan.stay} city={input.city} />
+          </div>
+        )}
       </div>
 
-      <div role="tabpanel" id="panel-Budget" aria-labelledby="tab-Budget" hidden={tab !== "Budget"} className="tab-panel">
-
+      <div
+        role="tabpanel"
+        id="panel-Budget"
+        aria-labelledby="tab-Budget"
+        hidden={tab !== "Budget"}
+        className="tab-panel"
+      >
         <h2 className="sr-only">{TAB_LABEL["Budget"]}</h2>
         <BudgetPanel
           items={plan.budget}
@@ -314,30 +469,51 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
         />
       </div>
 
-      <div role="tabpanel" id="panel-Timeline" aria-labelledby="tab-Timeline" hidden={tab !== "Timeline"} className="tab-panel">
-
+      <div
+        role="tabpanel"
+        id="panel-Timeline"
+        aria-labelledby="tab-Timeline"
+        hidden={tab !== "Timeline"}
+        className="tab-panel"
+      >
         <h2 className="sr-only">{TAB_LABEL["Timeline"]}</h2>
         <TimelinePanel
           eventDate={input.date}
           tasks={plan.timeline}
-          onToggle={(i) => update((p) => ({ timeline: p.timeline.map((t, n) => (n === i ? { ...t, done: !t.done } : t)) }))}
+          onToggle={(i) =>
+            update((p) => ({ timeline: p.timeline.map((t, n) => (n === i ? { ...t, done: !t.done } : t)) }))
+          }
         />
       </div>
 
-      <div role="tabpanel" id="panel-Vendors" aria-labelledby="tab-Vendors" hidden={tab !== "Vendors"} className="tab-panel">
-
+      <div
+        role="tabpanel"
+        id="panel-Vendors"
+        aria-labelledby="tab-Vendors"
+        hidden={tab !== "Vendors"}
+        className="tab-panel"
+      >
         <h2 className="sr-only">{TAB_LABEL["Vendors"]}</h2>
         <VendorsPanel
           vendors={plan.vendors}
           city={input.city}
           occasion={meta.label.toLowerCase()}
-          onToggle={(i) => update((p) => ({ vendors: p.vendors.map((v, n) => (n === i ? { ...v, done: !v.done } : v)) }))}
-          onShortlist={(i, shortlist) => update((p) => ({ vendors: p.vendors.map((v, n) => (n === i ? { ...v, shortlist } : v)) }))}
+          onToggle={(i) =>
+            update((p) => ({ vendors: p.vendors.map((v, n) => (n === i ? { ...v, done: !v.done } : v)) }))
+          }
+          onShortlist={(i, shortlist) =>
+            update((p) => ({ vendors: p.vendors.map((v, n) => (n === i ? { ...v, shortlist } : v)) }))
+          }
         />
       </div>
 
-      <div role="tabpanel" id="panel-Ideas" aria-labelledby="tab-Ideas" hidden={tab !== "Ideas"} className="tab-panel">
-
+      <div
+        role="tabpanel"
+        id="panel-Ideas"
+        aria-labelledby="tab-Ideas"
+        hidden={tab !== "Ideas"}
+        className="tab-panel"
+      >
         <h2 className="sr-only">{TAB_LABEL["Ideas"]}</h2>
         <IdeasPanel ideas={plan.ideas} customs={plan.customs} onMore={moreIdeas} busy={ideating} />
       </div>
@@ -347,14 +523,30 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
           <div className="drawer-backdrop" onClick={() => !refining && setRefineOpen(false)} />
           <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="refine-h">
             <div className="row">
-              <h2 id="refine-h" style={{ fontSize: "1.5rem", margin: 0 }}>Refine your plan</h2>
+              <h2 id="refine-h" style={{ fontSize: "1.5rem", margin: 0 }}>
+                Refine your plan
+              </h2>
               <span className="spacer" />
-              <button type="button" className="btn btn-ghost btn-icon" aria-label="Close" disabled={refining} onClick={() => setRefineOpen(false)}><X size={20} aria-hidden="true" /></button>
+              <button
+                type="button"
+                className="btn btn-ghost btn-icon"
+                aria-label="Close"
+                disabled={refining}
+                onClick={() => setRefineOpen(false)}
+              >
+                <X size={20} aria-hidden="true" />
+              </button>
             </div>
-            <p className="muted" style={{ marginTop: 12 }}>
-              Describe a change in plain English. Everything else stays the same. Ticked tasks and vendors stay ticked; budget locks are reset.
+            <p className="muted mt-12">
+              Describe a change in plain English. Everything else stays the same. Ticked tasks and vendors
+              stay ticked; budget locks are reset.
             </p>
-            <form onSubmit={(e) => { e.preventDefault(); refine(refineText); }}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                refine(refineText);
+              }}
+            >
               <label htmlFor="refine">What would you like to change?</label>
               <textarea
                 id="refine"
@@ -367,10 +559,23 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
               />
               <div className="chips" style={{ margin: "14px 0 20px" }}>
                 {REFINE_SUGGESTIONS.map((s) => (
-                  <button type="button" key={s} className="chip" disabled={refining} onClick={() => setRefineText(s)}>{s}</button>
+                  <button
+                    type="button"
+                    key={s}
+                    className="chip"
+                    disabled={refining}
+                    onClick={() => setRefineText(s)}
+                  >
+                    {s}
+                  </button>
                 ))}
               </div>
-              <button type="submit" className="btn btn-primary" style={{ width: "100%" }} disabled={refining || !refineText.trim()}>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{ width: "100%" }}
+                disabled={refining || !refineText.trim()}
+              >
                 {refining ? "Updating… (10–20s)" : "Update plan"}
               </button>
             </form>

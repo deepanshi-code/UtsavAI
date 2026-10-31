@@ -16,7 +16,8 @@ export default function ThemePicker() {
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent | KeyboardEvent) => {
-      if (e instanceof KeyboardEvent ? e.key === "Escape" : !ref.current?.contains(e.target as Node)) setOpen(false);
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !ref.current?.contains(e.target as Node))
+        setOpen(false);
     };
     document.addEventListener("mousedown", close);
     document.addEventListener("keydown", close);
@@ -54,7 +55,9 @@ export default function ThemePicker() {
               }}
             >
               <span className="theme-swatch" aria-hidden="true">
-                {t.swatch.map((c) => <span key={c} style={{ background: c }} />)}
+                {t.swatch.map((c) => (
+                  <span key={c} style={{ background: c }} />
+                ))}
               </span>
               {t.label}
               {current === t.id && <span className="spacer" aria-hidden="true" />}

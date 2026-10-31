@@ -45,7 +45,10 @@ export function buildIcs(
   now = new Date(),
   schedule: ScheduleItem[] = [],
 ): string {
-  const stamp = now.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const stamp = now
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
   const compact = (d: string) => d.replace(/-/g, "");
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//UtsavAI//EN", "CALSCALE:GREGORIAN"];
   const allDay = (uid: string, day: string, summary: string, description: string) =>
@@ -60,9 +63,21 @@ export function buildIcs(
       "END:VEVENT",
     );
 
-  tasks.forEach((t, i) => allDay(`${compact(eventDate)}-${i}`, taskDate(eventDate, t.daysBefore), `${title}: ${t.task}`, `Owner: ${t.owner}`));
+  tasks.forEach((t, i) =>
+    allDay(
+      `${compact(eventDate)}-${i}`,
+      taskDate(eventDate, t.daysBefore),
+      `${title}: ${t.task}`,
+      `Owner: ${t.owner}`,
+    ),
+  );
   schedule.forEach((s, i) =>
-    allDay(`${compact(eventDate)}-s${i}`, taskDate(eventDate, 1 - s.day), `${s.title}${s.time ? ` · ${s.time}` : ""}`, `${title}, day ${s.day}. ${s.details}`),
+    allDay(
+      `${compact(eventDate)}-s${i}`,
+      taskDate(eventDate, 1 - s.day),
+      `${s.title}${s.time ? ` · ${s.time}` : ""}`,
+      `${title}, day ${s.day}. ${s.details}`,
+    ),
   );
   lines.push("END:VCALENDAR");
   return lines.map(fold).join("\r\n") + "\r\n";

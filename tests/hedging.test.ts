@@ -48,7 +48,10 @@ afterEach(() => {
 
 async function run() {
   const p = generateJson("prompt", {}, "key");
-  const settled = p.then((v) => ({ v }), (e) => ({ e }));
+  const settled = p.then(
+    (v) => ({ v }),
+    (e) => ({ e }),
+  );
   await vi.advanceTimersByTimeAsync(60_000);
   return settled as Promise<{ v?: unknown; e?: unknown }>;
 }

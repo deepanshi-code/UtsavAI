@@ -1,11 +1,4 @@
-export const EVENT_TYPES = [
-  "wedding",
-  "birthday",
-  "community",
-  "festival",
-  "corporate",
-  "other",
-] as const;
+export const EVENT_TYPES = ["wedding", "birthday", "community", "festival", "corporate", "other"] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 
 /** What the user tells us about their event. */
@@ -109,7 +102,14 @@ export interface VendorItem {
   shortlist?: VendorPick[]; // client-side only: real businesses the host saved
 }
 
-export const IDEA_CATEGORIES = ["Decor", "Entertainment", "Food & drinks", "Guest experience", "Photos & social", "Tradition, reimagined"] as const;
+export const IDEA_CATEGORIES = [
+  "Decor",
+  "Entertainment",
+  "Food & drinks",
+  "Guest experience",
+  "Photos & social",
+  "Tradition, reimagined",
+] as const;
 
 export interface Idea {
   title: string;

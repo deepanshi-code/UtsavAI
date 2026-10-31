@@ -19,7 +19,14 @@ import { Toran } from "./designs/Toran";
  * public/fonts) and embedded into the SVG on export, so the PNG matches the preview.
  */
 
-export { PALETTES, resolvePalette, resolveTemplate, TEMPLATES, type PaletteId, type TemplateId } from "./catalog";
+export {
+  PALETTES,
+  resolvePalette,
+  resolveTemplate,
+  TEMPLATES,
+  type PaletteId,
+  type TemplateId,
+} from "./catalog";
 export { svgToPng } from "./export";
 
 interface Props {
@@ -30,15 +37,34 @@ interface Props {
   facts: InviteFacts;
 }
 
-const InviteCard = forwardRef<SVGSVGElement, Props>(function InviteCard({ template, palette, seed, text, facts }, ref) {
+const InviteCard = forwardRef<SVGSVGElement, Props>(function InviteCard(
+  { template, palette, seed, text, facts },
+  ref,
+) {
   const id = resolveTemplate(template);
   const p = PALETTES.find((x) => x.id === resolvePalette(palette)) ?? PALETTES[0];
   const r = rng(seed);
   const uid = `c${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
-  const Design = { royal: Royal, botanical: Botanical, festive: Festive, watercolour: Watercolour, party: Party, mandala: Mandala, toran: Toran }[id];
+  const Design = {
+    royal: Royal,
+    botanical: Botanical,
+    festive: Festive,
+    watercolour: Watercolour,
+    party: Party,
+    mandala: Mandala,
+    toran: Toran,
+  }[id];
 
   return (
-    <svg ref={ref} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${CARD_W} ${CARD_H}`} width={CARD_W} height={CARD_H} role="img" aria-label={`Invitation: ${text.headline} ${text.names}`}>
+    <svg
+      ref={ref}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox={`0 0 ${CARD_W} ${CARD_H}`}
+      width={CARD_W}
+      height={CARD_H}
+      role="img"
+      aria-label={`Invitation: ${text.headline} ${text.names}`}
+    >
       <defs>
         <style>{FONT_CSS}</style>
         <linearGradient id={`${uid}bg`} x1="0" y1="0" x2="0" y2="1">

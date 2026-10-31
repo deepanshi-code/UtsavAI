@@ -16,9 +16,7 @@ export function distribute(total: number, weights: number[]): number[] {
   const shares = wsum > 0 ? clean.map((w) => (w / wsum) * total) : clean.map(() => total / clean.length);
   const floors = shares.map(Math.floor);
   let left = total - floors.reduce((a, b) => a + b, 0);
-  const order = shares
-    .map((s, i) => ({ i, frac: s - Math.floor(s) }))
-    .sort((a, b) => b.frac - a.frac);
+  const order = shares.map((s, i) => ({ i, frac: s - Math.floor(s) })).sort((a, b) => b.frac - a.frac);
   for (let k = 0; left > 0; k = (k + 1) % order.length, left--) floors[order[k].i] += 1;
   return floors;
 }
@@ -47,7 +45,10 @@ export function rebalance(items: BudgetItem[], total: number): RebalanceResult {
     };
   }
 
-  const parts = distribute(remaining, unlocked.map((i) => i.amount));
+  const parts = distribute(
+    remaining,
+    unlocked.map((i) => i.amount),
+  );
   let k = 0;
   return {
     items: items.map((i) => (i.locked ? i : { ...i, amount: parts[k++] })),
@@ -59,7 +60,12 @@ export function rebalance(items: BudgetItem[], total: number): RebalanceResult {
  * Applies a user edit to one category, locks it (the user chose that number) and
  * rebalances the rest so the total stays the same.
  */
-export function editCategory(items: BudgetItem[], index: number, amount: number, total: number): RebalanceResult {
+export function editCategory(
+  items: BudgetItem[],
+  index: number,
+  amount: number,
+  total: number,
+): RebalanceResult {
   const next = items.map((i, n) =>
     n === index ? { ...i, amount: Math.max(0, Math.round(amount)), locked: true } : i,
   );

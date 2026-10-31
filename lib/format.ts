@@ -27,7 +27,10 @@ export function formatDateRange(start: string, days = 1): string {
   const s = new Date(`${start}T00:00:00Z`);
   const e = new Date(`${end}T00:00:00Z`);
   const sameMonth = s.getUTCMonth() === e.getUTCMonth() && s.getUTCFullYear() === e.getUTCFullYear();
-  const left = s.toLocaleDateString("en-IN", sameMonth ? { ...opts, day: "numeric" } : { ...opts, day: "numeric", month: "short" });
+  const left = s.toLocaleDateString(
+    "en-IN",
+    sameMonth ? { ...opts, day: "numeric" } : { ...opts, day: "numeric", month: "short" },
+  );
   return `${left}–${e.toLocaleDateString("en-IN", { ...opts, day: "numeric", month: "short", year: "numeric" })}`;
 }
 

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { buildPrompt, isTransient, modelChain, normalisePlan, resolveTotal } from "@/lib/gemini";
+import { isTransient, modelChain } from "@/lib/gemini";
+import { normalisePlan, resolveTotal } from "@/lib/normalise";
+import { buildPrompt } from "@/lib/prompts";
 import { buildIcs, escapeIcs, taskDate } from "@/lib/ics";
 import { decodeShare, encodeShare } from "@/lib/share";
 import { samplePlan } from "@/lib/sample";
@@ -49,7 +51,11 @@ describe("validateInput", () => {
     const r = validateInput({
       ...input,
       days: 3,
-      functions: [{ name: "Haldi", day: 9, guests: -5, theme: "Yellow" }, { name: "", day: 1, guests: 10 }, "junk"],
+      functions: [
+        { name: "Haldi", day: 9, guests: -5, theme: "Yellow" },
+        { name: "", day: 1, guests: 10 },
+        "junk",
+      ],
     });
     expect(r.ok && r.value.functions).toEqual([{ name: "Haldi", day: 3, guests: 1, theme: "Yellow" }]);
   });
@@ -65,7 +71,12 @@ describe("validateInput", () => {
 describe("normalisePlan", () => {
   it("forces the budget to sum to the user's total", () => {
     const plan = normalisePlan(
-      { budget: [{ category: "Venue", amount: 100000, notes: "" }, { category: "Food", amount: 150000, notes: "" }] },
+      {
+        budget: [
+          { category: "Venue", amount: 100000, notes: "" },
+          { category: "Food", amount: 150000, notes: "" },
+        ],
+      },
       input,
     );
     expect(plan.budget.reduce((a, b) => a + b.amount, 0)).toBe(500000);
@@ -74,7 +85,12 @@ describe("normalisePlan", () => {
 
   it("clamps timeline tasks to the days remaining and sorts them", () => {
     const plan = normalisePlan(
-      { timeline: [{ daysBefore: 0, task: "Day of", owner: "" }, { daysBefore: 365, task: "Book venue", owner: "Host" }] },
+      {
+        timeline: [
+          { daysBefore: 0, task: "Day of", owner: "" },
+          { daysBefore: 365, task: "Book venue", owner: "Host" },
+        ],
+      },
       input,
     );
     expect(plan.timeline[0]).toMatchObject({ task: "Book venue", daysBefore: 30 });
@@ -82,7 +98,10 @@ describe("normalisePlan", () => {
   });
 
   it("survives garbage without throwing", () => {
-    const plan = normalisePlan({ budget: "lots", vendors: [null, 3, { category: "" }], risks: [1, "ok"] }, input);
+    const plan = normalisePlan(
+      { budget: "lots", vendors: [null, 3, { category: "" }], risks: [1, "ok"] },
+      input,
+    );
     expect(plan.budget).toEqual([]);
     expect(plan.vendors).toEqual([]);
     expect(plan.risks).toEqual(["ok"]);
@@ -138,7 +157,12 @@ describe("resolveTotal", () => {
 
 describe("modelChain", () => {
   it("defaults to a chain of pinned Flash models", () => {
-    expect(modelChain({})).toEqual(["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]);
+    expect(modelChain({})).toEqual([
+      "gemini-3.6-flash",
+      "gemini-3.5-flash",
+      "gemini-3.5-flash-lite",
+      "gemini-3.1-flash-lite",
+    ]);
   });
 
   it("parses GEMINI_MODELS, trimming blanks and duplicates", () => {
@@ -176,10 +200,15 @@ describe("ics", () => {
   });
 
   it("builds one all-day event per task with CRLF line endings", () => {
-    const ics = buildIcs("Wedding", "2026-12-10", [
-      { daysBefore: 10, task: "Book caterer", owner: "Host" },
-      { daysBefore: 0, task: "Event day", owner: "Planner" },
-    ], new Date("2026-10-29T00:00:00Z"));
+    const ics = buildIcs(
+      "Wedding",
+      "2026-12-10",
+      [
+        { daysBefore: 10, task: "Book caterer", owner: "Host" },
+        { daysBefore: 0, task: "Event day", owner: "Planner" },
+      ],
+      new Date("2026-10-29T00:00:00Z"),
+    );
     expect(ics.match(/BEGIN:VEVENT/g)).toHaveLength(2);
     expect(ics).toContain("DTSTART;VALUE=DATE:20261130");
     expect(ics).toContain("DTEND;VALUE=DATE:20261201");

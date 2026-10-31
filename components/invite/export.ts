@@ -11,7 +11,15 @@ function inlineFont(url: string): Promise<string> {
       url,
       fetch(url)
         .then((r) => r.blob())
-        .then((b) => new Promise<string>((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result)); fr.onerror = rej; fr.readAsDataURL(b); })),
+        .then(
+          (b) =>
+            new Promise<string>((res, rej) => {
+              const fr = new FileReader();
+              fr.onload = () => res(String(fr.result));
+              fr.onerror = rej;
+              fr.readAsDataURL(b);
+            }),
+        ),
     );
   }
   return fontData.get(url)!;
@@ -41,7 +49,9 @@ export async function svgToPng(svg: SVGSVGElement): Promise<Blob> {
     canvas.width = CARD_W;
     canvas.height = CARD_H;
     canvas.getContext("2d")!.drawImage(img, 0, 0, CARD_W, CARD_H);
-    return await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error("PNG export failed"))), "image/png"));
+    return await new Promise<Blob>((res, rej) =>
+      canvas.toBlob((b) => (b ? res(b) : rej(new Error("PNG export failed"))), "image/png"),
+    );
   } finally {
     URL.revokeObjectURL(url);
   }

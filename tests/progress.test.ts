@@ -19,7 +19,16 @@ const plan = (tasks: [string, boolean?][], vendors: [string, boolean?][]): Event
 
 describe("carryProgress", () => {
   it("keeps ticks on tasks and vendors that survive a refine", () => {
-    const prev = plan([["Book venue", true], ["Send invites", false]], [["Caterer", true], ["DJ", false]]);
+    const prev = plan(
+      [
+        ["Book venue", true],
+        ["Send invites", false],
+      ],
+      [
+        ["Caterer", true],
+        ["DJ", false],
+      ],
+    );
     const next = plan([["Book venue"], ["Order cake"]], [["caterer "], ["Florist"]]);
     const out = carryProgress(prev, next);
     expect(out.timeline.map((t) => !!t.done)).toEqual([true, false]);
