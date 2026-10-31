@@ -2,10 +2,14 @@ import { Type, type Schema } from "@google/genai";
 import { NextResponse } from "next/server";
 import { GeminiBusyError, generateJson } from "@/lib/gemini";
 import { buildInvitePrompt, cleanOptions, defaultInvite, normaliseInvite, type InviteOccasion, type InviteText } from "@/lib/invite";
+import { clientIp, createLimiter } from "@/lib/rateLimit";
 import { validateInput } from "@/lib/validate";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+// "Write all with AI" sends one request per wedding function, so allow a burst of those.
+const limited = createLimiter(20);
 
 const INVITE_SCHEMA: Schema = {
   type: Type.OBJECT,
@@ -20,6 +24,7 @@ const INVITE_SCHEMA: Schema = {
 };
 
 export async function POST(req: Request) {
+  if (limited(clientIp(req))) return NextResponse.json({ error: "Too many requests. Please wait a minute." }, { status: 429 });
   let body: Record<string, unknown>;
   try {
     body = await req.json();

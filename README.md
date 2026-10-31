@@ -46,13 +46,14 @@ Plans are saved in the browser (localStorage), so no account or database is need
 - **Share links live in the URL fragment** (`#p=…`, lz-compressed). Fragments are never sent to the server, so there's no database to run and shared plans aren't logged.
 - **Model output is validated, not trusted.** `normalisePlan` drops malformed rows, caps string lengths, clamps dates and schedule days, sanitises map queries and fixes the budget sum. Plans sent back for refinement are re-normalised and size-capped.
 - **Prompt-injection hygiene.** User text is fenced (`<event_details>`, `<facts>`) and the prompts say to treat it as data. This reduces risk but doesn't eliminate it, which is why output is also validated.
-- **Model fallback within a time budget.** During testing the newest Flash models were often overloaded (503s, 60s+ queues). The server cycles `gemini-3.5-flash` and `gemini-3.1-flash-lite` with backoff, inside Vercel's 60s function limit. Thinking is set to LOW because schema-shaped output doesn't need long reasoning.
+- **Model fallback within a time budget.** During testing the newest Flash models were often overloaded (503s, 60s+ queues). The server works through a chain of four Flash models with hedged requests: if one is slow after 12s, the next starts alongside it and the first valid answer wins, all inside Vercel's 60s function limit. Thinking is set to LOW because schema-shaped output doesn't need long reasoning.
 - **No guessed facts.** The model once titled a 30-guest party a "30th birthday". The prompt now says "Guest count: 30 people" and passes an explicit "Age / milestone: not specified (do not assume…)" unless the user fills in the optional milestone field.
 - **No invented venues.** Free-tier keys can't use Gemini's Maps grounding, and an LLM naming venues would invent some. So the model only suggests venue types and the names come from Google Maps (keyless embed + documented Maps URLs). With billing enabled, Maps grounding could list named venues directly.
 - **Invitation typography.** Cards use Great Vibes, Cormorant Garamond and Cinzel (SIL OFL 1.1, bundled in `public/fonts` with their licences). Fonts are inlined into the SVG on export, so the downloaded PNG matches the preview.
 - **Calm, editorial design.** Warm ivory paper, Fraunces headings, Inter body text and Lucide line icons (no emoji), flat buttons, in four themes (Paper, Blush, Mint, Night journal) set before first paint to avoid a flash.
-- **Accessible interactions.** ARIA tabs with arrow-key navigation, radio/checkbox roles on custom controls, focus moved to each wizard step's heading, `prefers-reduced-motion` respected throughout, 3D tilt disabled on touch.
-- **API key stays server-side** in Next.js route handlers; inputs are validated and the plan route has a best-effort rate limit.
+- **Accessible interactions.** ARIA tabs with arrow-key navigation, radio/checkbox roles on custom controls, focus moved to each wizard step's heading, `prefers-reduced-motion` respected throughout, 3D tilt disabled on touch. Every page and plan tab passes an axe-core WCAG 2 A/AA scan in all four themes, including text contrast of at least 4.5:1 and a logical heading order.
+- **API key stays server-side** in Next.js route handlers; inputs are validated and every API route has a best-effort per-client rate limit.
+- **Security headers.** A Content Security Policy limits scripts, styles, images and fonts to this origin (frames only to Google Maps), plus `X-Frame-Options: DENY`, `nosniff`, a strict referrer policy and a Permissions-Policy that turns off camera, microphone and location.
 - **A planner, not a form.** The plan opens with a personal note in the planner's voice, and the 15–30s generation wait shows the family's brief and occasion-specific tips instead of a bare spinner.
 - **Runs without a key.** If `GEMINI_API_KEY` is unset, the API returns a clearly labelled sample plan (and template invitation wording) so the UI can be developed and tested offline.
 
@@ -72,7 +73,7 @@ npm run dev                  # http://localhost:3000
 ```
 
 ```bash
-npm test          # 78 unit tests: budget maths, validation, prompts, normalisation, retries, multi-day schedule, venues, invitations, .ics, share links, progress
+npm test          # 89 unit tests: budget maths, validation, prompts, normalisation, hedged model calls, rate limiting, multi-day schedule, venues, invitations, .ics, share links, progress
 npm run typecheck
 ```
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { rankTop, searchPlaces, type PlaceResult } from "@/lib/places";
+import { clientIp, createLimiter } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -7,16 +8,8 @@ export const runtime = "nodejs";
 // (per serverless instance) and each visitor gets a modest per-minute allowance.
 const cache = new Map<string, { at: number; results: PlaceResult[] }>();
 const CACHE_MS = 60 * 60 * 1000;
-const hits = new Map<string, number[]>();
-
-function limited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < 60_000);
-  recent.push(now);
-  hits.set(ip, recent);
-  // A plan auto-loads about 10 lists (vendors, venue types, hotels), so allow some headroom.
-  return recent.length > 40;
-}
+// A plan auto-loads about 10 lists (vendors, venue types, hotels), so allow some headroom.
+const limited = createLimiter(40);
 
 /** GET /api/places?q=photographer&city=Jaipur → real businesses with contact details. */
 export async function GET(req: Request) {
@@ -30,8 +23,7 @@ export async function GET(req: Request) {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) return NextResponse.json({ configured: false, results: [] });
 
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  if (limited(ip)) return NextResponse.json({ error: "Too many searches. Please wait a minute." }, { status: 429 });
+  if (limited(clientIp(req))) return NextResponse.json({ error: "Too many searches. Please wait a minute." }, { status: 429 });
 
   // ?top=4 returns only the best-rated few (rating weighted by review count).
   const top = Math.min(10, Math.max(0, Number(url.searchParams.get("top")) || 0));

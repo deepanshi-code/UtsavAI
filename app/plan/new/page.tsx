@@ -185,6 +185,7 @@ function Wizard() {
 
   return (
     <div className="wizard">
+      <h1 className="sr-only">{editing ? "Edit your plan" : "Plan a new celebration"}</h1>
       <span className="eyebrow">{editing ? `Editing: ${editing.plan.title}` : "New plan"}</span>
       <div className="progress" aria-label={`Step ${step + 1} of ${flow.length}`}>
         {flow.map((s, i) => (

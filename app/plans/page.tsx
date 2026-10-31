@@ -72,12 +72,12 @@ export default function PlansPage() {
                       {days > 0 ? `in ${days} days` : days === 0 ? "today" : "past"}
                     </span>
                   </div>
-                  <h3>
+                  <h2 className="h3">
                     <Link href={`/plan/${p.id}`} style={{ position: "static" }}>
                       {p.plan.title}
                       <span style={{ position: "absolute", inset: 0 }} aria-hidden="true" />
                     </Link>
-                  </h3>
+                  </h2>
                   <p className="muted small" style={{ margin: 0 }}>{formatDate(p.input.date)} · {p.input.city} · {p.input.guests} guests</p>
                   <span className="spacer" />
                   <div style={{ marginTop: 16 }}>
@@ -86,7 +86,7 @@ export default function PlansPage() {
                       <span className="spacer" />
                       <span className="faint">{pct}% done</span>
                     </div>
-                    <div className="bar" aria-label={`${pct}% of tasks and vendors done`}><span style={{ width: `${pct}%`, background: "var(--grad)" }} /></div>
+                    <div className="bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tasks and vendors done"><span style={{ width: `${pct}%`, background: "var(--grad)" }} /></div>
                   </div>
                   <div className="row" style={{ marginTop: 14, position: "relative", zIndex: 2 }}>
                     <Link href={`/plan/${p.id}`} className="btn btn-sm">Open</Link>

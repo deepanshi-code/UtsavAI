@@ -225,6 +225,8 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
 
       {/* All panels stay in the DOM (hidden) so printing includes every section. */}
       <div role="tabpanel" id="panel-Overview" aria-labelledby="tab-Overview" hidden={tab !== "Overview"} className="tab-panel">
+        {/* Bridges the page's h1 and the panels' h3 cards for screen-reader navigation. */}
+        <h2 className="sr-only">{TAB_LABEL["Overview"]}</h2>
         {plan.plannerNote && (
           <section className="card planner-note" style={{ marginBottom: 20 }} aria-label="A note from your planner">
             <span className="eyebrow">From your planner</span>
@@ -282,6 +284,8 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
       </div>
 
       <div role="tabpanel" id="panel-Schedule" aria-labelledby="tab-Schedule" hidden={tab !== "Schedule"} className="tab-panel">
+
+        <h2 className="sr-only">{TAB_LABEL["Schedule"]}</h2>
         <SchedulePanel
           start={input.date}
           days={eventDays}
@@ -294,11 +298,14 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
 
       {/* The map iframe only mounts when the tab is opened, so it costs nothing until needed. */}
       <div role="tabpanel" id="panel-Venues" aria-labelledby="tab-Venues" hidden={tab !== "Venues"} className="tab-panel no-print">
+        <h2 className="sr-only">{TAB_LABEL["Venues"]}</h2>
         {tab === "Venues" && <VenuesPanel city={input.city} eventType={input.eventType} venueTypes={plan.venueTypes} />}
         {plan.stay && <div style={{ marginTop: 20 }}><StayPanel stay={plan.stay} city={input.city} /></div>}
       </div>
 
       <div role="tabpanel" id="panel-Budget" aria-labelledby="tab-Budget" hidden={tab !== "Budget"} className="tab-panel">
+
+        <h2 className="sr-only">{TAB_LABEL["Budget"]}</h2>
         <BudgetPanel
           items={plan.budget}
           total={input.budget}
@@ -308,6 +315,8 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
       </div>
 
       <div role="tabpanel" id="panel-Timeline" aria-labelledby="tab-Timeline" hidden={tab !== "Timeline"} className="tab-panel">
+
+        <h2 className="sr-only">{TAB_LABEL["Timeline"]}</h2>
         <TimelinePanel
           eventDate={input.date}
           tasks={plan.timeline}
@@ -316,6 +325,8 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
       </div>
 
       <div role="tabpanel" id="panel-Vendors" aria-labelledby="tab-Vendors" hidden={tab !== "Vendors"} className="tab-panel">
+
+        <h2 className="sr-only">{TAB_LABEL["Vendors"]}</h2>
         <VendorsPanel
           vendors={plan.vendors}
           city={input.city}
@@ -326,6 +337,8 @@ export default function PlanDashboard({ saved, onChange, banner, onDelete, invit
       </div>
 
       <div role="tabpanel" id="panel-Ideas" aria-labelledby="tab-Ideas" hidden={tab !== "Ideas"} className="tab-panel">
+
+        <h2 className="sr-only">{TAB_LABEL["Ideas"]}</h2>
         <IdeasPanel ideas={plan.ideas} customs={plan.customs} onMore={moreIdeas} busy={ideating} />
       </div>
 

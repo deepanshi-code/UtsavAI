@@ -218,12 +218,12 @@ export default function InvitePage() {
       </div>
 
       {occasions.length > 1 && (
-        <div className="occasion-bar" role="tablist" aria-label="Which invitation">
+        <div className="occasion-bar" role="group" aria-label="Which invitation">
           {occasions.map((o) => {
             const design = invites[o.key];
             const pal = PALETTES.find((p) => p.id === design?.palette);
             return (
-              <button key={o.key} type="button" role="tab" aria-selected={o.key === activeKey} className="occasion" onClick={() => setActiveKey(o.key)}>
+              <button key={o.key} type="button" aria-pressed={o.key === activeKey} className="occasion" onClick={() => setActiveKey(o.key)}>
                 <span className="occasion-swatch" style={{ background: pal ? `linear-gradient(135deg, ${pal.bg}, ${pal.accent})` : undefined }} aria-hidden="true" />
                 <span>
                   <strong>{o.key === MAIN_KEY ? "Whole celebration" : o.title}</strong>
@@ -246,7 +246,7 @@ export default function InvitePage() {
         <div className="stack">
           <section className="card" aria-labelledby="words-h">
             <div className="row">
-              <h3 id="words-h" style={{ margin: 0 }}>1. {occ.key === MAIN_KEY ? "Event details" : `${occ.title} details`}</h3>
+              <h2 id="words-h" className="h3" style={{ margin: 0 }}>1. {occ.key === MAIN_KEY ? "Event details" : `${occ.title} details`}</h2>
               <span className="spacer" />
               {occ.guests ? <span className="badge"><Users size={13} aria-hidden="true" /> For about {occ.guests} guests</span> : null}
             </div>
@@ -272,7 +272,7 @@ export default function InvitePage() {
           </section>
 
           <section className="card" aria-labelledby="ai-h">
-            <h3 id="ai-h">2. Wording</h3>
+            <h2 id="ai-h" className="h3">2. Wording</h2>
             <div className="field" style={{ marginTop: 8 }}>
               <span className="label" id="tone-l">Tone</span>
               <div className="chips" role="radiogroup" aria-labelledby="tone-l">
@@ -304,7 +304,7 @@ export default function InvitePage() {
           </section>
 
           <section className="card" aria-labelledby="design-h">
-            <h3 id="design-h">3. Design</h3>
+            <h2 id="design-h" className="h3">3. Design</h2>
             <span className="label" id="tpl-l">Style</span>
             <div className="chips" role="radiogroup" aria-labelledby="tpl-l">
               {TEMPLATES.map((t) => <button key={t.id} type="button" role="radio" aria-checked={inv.template === t.id} className="chip" onClick={() => patch(activeKey, (x) => ({ ...x, template: t.id }))}>{t.label}</button>)}
@@ -338,7 +338,7 @@ export default function InvitePage() {
 
           <section className="card" style={{ marginTop: 20 }} aria-labelledby="wa-h">
             <div className="row">
-              <h3 id="wa-h" style={{ margin: 0 }}>Text message</h3>
+              <h2 id="wa-h" className="h3" style={{ margin: 0 }}>Text message</h2>
               <span className="spacer" />
               {inv.message !== undefined && (
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => patch(activeKey, (x) => ({ ...x, message: undefined }))}>

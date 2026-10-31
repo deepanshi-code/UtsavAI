@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { buildIdeasPrompt, GeminiBusyError, generateJson, IDEAS_SCHEMA, normaliseIdeas } from "@/lib/gemini";
+import { clientIp, createLimiter } from "@/lib/rateLimit";
 import { IDEA_CATEGORIES } from "@/lib/types";
 import { validateInput } from "@/lib/validate";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+const limited = createLimiter(10);
+
 /** Six more ideas for an existing plan, avoiding the ones it already has. */
 export async function POST(req: Request) {
+  if (limited(clientIp(req))) return NextResponse.json({ error: "Too many requests. Please wait a minute." }, { status: 429 });
   let body: Record<string, unknown>;
   try {
     body = await req.json();

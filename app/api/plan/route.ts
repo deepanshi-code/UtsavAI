@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { GeminiBusyError, generatePlan, normalisePlan } from "@/lib/gemini";
+import { clientIp, createLimiter } from "@/lib/rateLimit";
 import { samplePlan } from "@/lib/sample";
 import type { EventPlan, PlanResponse } from "@/lib/types";
 import { LIMITS, validateInput } from "@/lib/validate";
@@ -7,23 +8,10 @@ import { LIMITS, validateInput } from "@/lib/validate";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// Best-effort per-instance rate limit. Serverless instances don't share memory,
-// so this only blunts bursts; a shared store (e.g. Upstash) would be needed for a hard cap.
-const hits = new Map<string, number[]>();
-const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 8;
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
-  recent.push(now);
-  hits.set(ip, recent);
-  return recent.length > MAX_PER_WINDOW;
-}
+const rateLimited = createLimiter(8);
 
 export async function POST(req: Request) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  if (rateLimited(ip)) {
+  if (rateLimited(clientIp(req))) {
     return NextResponse.json({ error: "Too many requests. Please wait a minute." }, { status: 429 });
   }
 
