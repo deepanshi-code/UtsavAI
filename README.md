@@ -16,7 +16,7 @@ Built for PromptWars Virtual, Challenge 05: Celebration & Event Planner.
 | `/` | Landing page with a CSS 3D planner notebook that leans toward the pointer (no WebGL, respects reduced motion) |
 | `/plan/new` | 4-step wizard: occasion → dates (1–7 days), city, guests & budget (log-scale sliders, live per-guest cost) → style & preferences → review |
 | `/plan/[id]` | Plan dashboard: countdown & progress stats; tabs for Overview, Schedule, Venues, Budget, Tasks, Vendors, Ideas; refine drawer; share, calendar, print |
-| `/plan/[id]/invite` | Invitation studio: one card per function (Haldi, Sangeet…) plus the main card, each with its own date, time, venue and a design matched to its theme; AI wording (English / Hindi / Hinglish, 4 tones), 8 generated designs × 9 palettes, preview, PNG download, WhatsApp text |
+| `/plan/[id]/invite` | Invitation studio: one card per function (Haldi, Sangeet…) plus the main card, each with its own date, time, venue and a design matched to its theme; AI wording (English / Hindi / Hinglish, 4 tones), 7 designs (Royal arch, Botanical vines, Festive lights, Watercolour, Party, Mandala, Marigold toran) × 12 palettes, preview, PNG download, WhatsApp text |
 | `/plans` | Saved plans with search, sort and progress |
 | `/share#p=…` | Opens a shared plan; "Save to my plans" makes your own editable copy |
 
@@ -49,6 +49,7 @@ Plans are saved in the browser (localStorage), so no account or database is need
 - **Model fallback within a time budget.** During testing the newest Flash models were often overloaded (503s, 60s+ queues). The server cycles `gemini-3.5-flash` and `gemini-3.1-flash-lite` with backoff, inside Vercel's 60s function limit. Thinking is set to LOW because schema-shaped output doesn't need long reasoning.
 - **No guessed facts.** The model once titled a 30-guest party a "30th birthday". The prompt now says "Guest count: 30 people" and passes an explicit "Age / milestone: not specified (do not assume…)" unless the user fills in the optional milestone field.
 - **No invented venues.** Free-tier keys can't use Gemini's Maps grounding, and an LLM naming venues would invent some. So the model only suggests venue types and the names come from Google Maps (keyless embed + documented Maps URLs). With billing enabled, Maps grounding could list named venues directly.
+- **Invitation typography.** Cards use Great Vibes, Cormorant Garamond and Cinzel (SIL OFL 1.1, bundled in `public/fonts` with their licences). Fonts are inlined into the SVG on export, so the downloaded PNG matches the preview.
 - **Calm, editorial design.** Warm ivory paper, Fraunces headings, Inter body text and Lucide line icons (no emoji), flat buttons, in four themes (Paper, Blush, Mint, Night journal) set before first paint to avoid a flash.
 - **Accessible interactions.** ARIA tabs with arrow-key navigation, radio/checkbox roles on custom controls, focus moved to each wizard step's heading, `prefers-reduced-motion` respected throughout, 3D tilt disabled on touch.
 - **API key stays server-side** in Next.js route handlers; inputs are validated and the plan route has a best-effort rate limit.

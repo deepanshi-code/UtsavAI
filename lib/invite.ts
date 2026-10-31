@@ -20,9 +20,13 @@ export interface InviteOccasion {
 export const MAIN_KEY = "main";
 export const occasionKey = (s: Pick<ScheduleItem, "day" | "title">) => `fn:${s.day}:${s.title.toLowerCase()}`;
 
-/** The main card plus one per real function (minor slots like lunch have no theme or decor). */
+/**
+ * Weddings get the main card plus one per real function (Haldi, Sangeet…; minor
+ * slots like lunch have no theme or decor). Every other occasion gets a single card.
+ */
 export function occasionsFor(input: PlanInput, schedule: ScheduleItem[]): InviteOccasion[] {
   const main: InviteOccasion = { key: MAIN_KEY, title: "Whole celebration", day: 1, time: "", guests: input.guests };
+  if (input.eventType !== "wedding") return [main];
   const fns = schedule
     .filter((s) => s.theme || s.decor)
     .map((s) => ({ key: occasionKey(s), title: s.title, day: s.day, time: s.time, guests: s.guests, theme: s.theme }));
@@ -30,24 +34,26 @@ export function occasionsFor(input: PlanInput, schedule: ScheduleItem[]): Invite
 }
 
 /** A starting design that matches the function's feel (it can always be changed). */
-export function designFor(type: EventType, occ?: InviteOccasion): { template: string; palette: string } {
+export function designFor(type: EventType, occ?: InviteOccasion, hint = ""): { template: string; palette: string } {
   const t = `${occ?.title ?? ""} ${occ?.theme ?? ""}`.toLowerCase();
   if (occ && occ.key !== MAIN_KEY) {
     if (/haldi|yellow|sunshine/.test(t)) return { template: "toran", palette: "haldi" };
-    if (/meh(e)?ndi|henna|green|garden/.test(t)) return { template: "mandala", palette: "mehendi" };
-    if (/sangeet|cocktail|party|dj|retro|bollywood|neon|night|disco/.test(t)) return { template: "confetti", palette: "midnight" };
-    if (/engage|roka|ring|tilak|sagai/.test(t)) return { template: "floral", palette: "blush" };
-    if (/reception/.test(t)) return { template: "arch", palette: "navy" };
-    if (/puja|pooja|aarti|ganesh|havan|path/.test(t)) return { template: "lotus", palette: "ivory" };
-    if (/wedding|pheras|ceremony|vivah|shaadi|nikah|anand/.test(t)) return { template: "arch", palette: "maroon" };
+    if (/meh(e)?ndi|henna|green|garden/.test(t)) return { template: "botanical", palette: "mehendi" };
+    if (/sangeet|cocktail|party|dj|retro|bollywood|neon|night|disco|garba/.test(t)) return { template: "festive", palette: "midnight" };
+    if (/engage|roka|ring|tilak|sagai/.test(t)) return { template: "botanical", palette: "sage" };
+    if (/reception/.test(t)) return { template: "royal", palette: "navy" };
+    if (/puja|pooja|aarti|ganesh|havan|path|diwali/.test(t)) return { template: "festive", palette: "festive" };
+    if (/wedding|pheras|ceremony|vivah|shaadi|nikah|anand/.test(t)) return { template: "royal", palette: "peach" };
   }
+  // Children's birthdays get the bright party card; grown-up ones the watercolour.
+  if (type === "birthday" && /kid|child|toddler|\b([1-9]|1[0-2])(st|nd|rd|th)\b/i.test(hint)) return { template: "party", palette: "candy" };
   const byType: Record<EventType, { template: string; palette: string }> = {
-    wedding: { template: "paisley", palette: "maroon" },
-    birthday: { template: "confetti", palette: "pastel" },
-    community: { template: "paisley", palette: "emerald" },
-    festival: { template: "lotus", palette: "ivory" },
-    corporate: { template: "minimal", palette: "navy" },
-    other: { template: "floral", palette: "blush" },
+    wedding: { template: "royal", palette: "peach" },
+    birthday: { template: "watercolour", palette: "wash" },
+    community: { template: "festive", palette: "festive" },
+    festival: { template: "festive", palette: "festive" },
+    corporate: { template: "mandala", palette: "navy" },
+    other: { template: "watercolour", palette: "wash" },
   };
   return byType[type];
 }
@@ -83,6 +89,10 @@ export interface InviteText {
 /** The hard facts shown on the card and in the message, always from the form. */
 export interface InviteFacts {
   dates: string;
+  /** First day shown on the card (YYYY-MM-DD), for layouts that split day/month/year. */
+  iso: string;
+  /** True when the card covers several days (the main card of a multi-day event). */
+  multiDay: boolean;
   time: string;
   venue: string;
   rsvp: string;
@@ -109,6 +119,8 @@ export function inviteFacts(input: PlanInput, o: InviteOptions, occ?: InviteOcca
   return {
     // A function's card shows its own day; the main card shows the whole date range.
     dates: forFunction ? formatDate(addDays(input.date, occ.day - 1)) : formatDateRange(input.date, input.days),
+    iso: forFunction ? addDays(input.date, occ.day - 1) : input.date,
+    multiDay: !forFunction && (input.days ?? 1) > 1,
     time: o.time.trim() || (forFunction ? occ.time : ""),
     venue: o.venue.trim() || `${input.city} · venue details to follow`,
     rsvp: o.rsvp.trim(),

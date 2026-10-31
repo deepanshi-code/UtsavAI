@@ -137,8 +137,8 @@ describe("resolveTotal", () => {
 });
 
 describe("modelChain", () => {
-  it("defaults to a primary model with a fallback", () => {
-    expect(modelChain({})).toEqual(["gemini-3.5-flash", "gemini-3.1-flash-lite"]);
+  it("defaults to a chain of pinned Flash models", () => {
+    expect(modelChain({})).toEqual(["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]);
   });
 
   it("parses GEMINI_MODELS, trimming blanks and duplicates", () => {

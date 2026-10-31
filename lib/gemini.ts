@@ -343,12 +343,13 @@ export function normalisePlan(raw: unknown, input: PlanInput): EventPlan {
 }
 
 /**
- * Models tried in order. Newer Flash models were often overloaded (503/504, 60s+
- * queues) during testing, so the default favours the one that responded reliably
- * and falls back to a lighter model. Override with GEMINI_MODELS="a,b".
+ * Models tried in order (exact versions, not "-latest" aliases, so behaviour doesn't
+ * change underneath us). Which Flash model is overloaded shifts during the day, so
+ * the chain spans four; requests are hedged across them (see generateJson).
+ * Override with GEMINI_MODELS="a,b".
  */
 export function modelChain(env: Record<string, string | undefined> = process.env): string[] {
-  const list = (env.GEMINI_MODELS || env.GEMINI_MODEL || "gemini-3.5-flash,gemini-3.1-flash-lite")
+  const list = (env.GEMINI_MODELS || env.GEMINI_MODEL || "gemini-3.6-flash,gemini-3.5-flash,gemini-3.5-flash-lite,gemini-3.1-flash-lite")
     .split(",")
     .map((m) => m.trim())
     .filter(Boolean);
@@ -359,6 +360,8 @@ export function modelChain(env: Record<string, string | undefined> = process.env
 const TOTAL_BUDGET_MS = 52_000;
 const ATTEMPT_CAP_MS = 38_000; // so one hung request still leaves time for another try
 const MIN_ATTEMPT_MS = 8_000; // a full plan rarely comes back faster than this
+const HEDGE_MS = 12_000; // if a model hasn't answered by now, start the next one alongside it
+const MAX_IN_FLIGHT = 2; // at most two models working on one request at a time
 
 /** Thrown when every attempt failed because Gemini was overloaded or slow, not because of our request. */
 export class GeminiBusyError extends Error {}
@@ -370,8 +373,6 @@ export function isTransient(err: unknown): boolean {
   return /timeout|timed out|abort|fetch failed|ECONNRESET/i.test(String((err as Error)?.message ?? err));
 }
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
 export async function generatePlan(
   input: PlanInput,
   apiKey: string,
@@ -382,56 +383,97 @@ export async function generatePlan(
   return { plan: normalisePlan(raw, { ...input, budget }), budget };
 }
 
+/** One attempt against one model; resolves with the parsed JSON. */
+async function callModel(model: string, contents: string, schema: Schema, apiKey: string, temperature: number, timeout: number, signal: AbortSignal): Promise<unknown> {
+  const ai = new GoogleGenAI({ apiKey, httpOptions: { timeout } });
+  const res = await ai.models.generateContent({
+    model,
+    contents,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: schema,
+      temperature,
+      // Schema-shaped output doesn't need long reasoning, and thinking time was the
+      // difference between ~15s and timing out.
+      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+      abortSignal: signal,
+    },
+  });
+  const text = res.text;
+  if (!text) throw new Error("Empty response from Gemini");
+  return JSON.parse(text);
+}
+
 /**
- * One structured-output call with retries: cycles through the model chain with
- * backoff inside the time budget, and returns the parsed JSON. Callers must still
- * validate the result; the schema shapes it but doesn't guarantee content.
+ * One structured-output request, made resilient to Gemini overload:
+ * - a failed attempt is replaced straight away by the next model in the chain
+ *   (with a short pause only after a whole round has failed);
+ * - a *slow* attempt is hedged: after HEDGE_MS the next model starts in parallel,
+ *   and whichever valid answer arrives first wins (the other is cancelled);
+ * - everything stops at the overall time budget, inside Vercel's 60s limit.
+ * Returns the parsed JSON; callers must still validate it.
  */
 export async function generateJson(contents: string, schema: Schema, apiKey: string, temperature = 0.7): Promise<unknown> {
   const models = modelChain();
   const deadline = Date.now() + TOTAL_BUDGET_MS;
+  const controllers: AbortController[] = [];
   let lastError: unknown;
   let allTransient = true;
+  let next = 0;
+  let inFlight = 0;
+  let failures = 0;
 
-  // Cycle through the models with growing backoff until one answers or time runs out.
-  for (let attempt = 0; models.length > 0; attempt++) {
-    const model = models[attempt % models.length];
-    const remaining = deadline - Date.now();
-    if (remaining < MIN_ATTEMPT_MS) break;
-    const timeout = Math.min(ATTEMPT_CAP_MS, remaining);
-    try {
-      const ai = new GoogleGenAI({ apiKey, httpOptions: { timeout } });
-      const res = await ai.models.generateContent({
-        model,
-        contents,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: schema,
-          temperature,
-          // Schema-shaped output doesn't need long reasoning, and thinking time was the
-          // difference between ~15s and timing out.
-          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+  return new Promise<unknown>((resolve, reject) => {
+    let settled = false;
+    let hedgeTimer: ReturnType<typeof setTimeout> | undefined;
+    const finish = (done: () => void) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(hedgeTimer);
+      clearTimeout(budgetTimer);
+      controllers.forEach((c) => c.abort());
+      done();
+    };
+    const fail = () =>
+      finish(() => reject(allTransient ? new GeminiBusyError(`Gemini busy: ${String(lastError ?? "timed out").slice(0, 200)}`) : lastError));
+    const budgetTimer = setTimeout(fail, TOTAL_BUDGET_MS);
+
+    const launch = () => {
+      if (settled || inFlight >= MAX_IN_FLIGHT) return;
+      const remaining = deadline - Date.now();
+      if (models.length === 0 || remaining < MIN_ATTEMPT_MS) {
+        if (inFlight === 0) fail();
+        return;
+      }
+      const model = models[next++ % models.length];
+      const ctrl = new AbortController();
+      controllers.push(ctrl);
+      inFlight++;
+      callModel(model, contents, schema, apiKey, temperature, Math.min(ATTEMPT_CAP_MS, remaining), ctrl.signal).then(
+        (data) => finish(() => resolve(data)),
+        (err) => {
+          inFlight--;
+          if (settled) return;
+          lastError = err;
+          failures++;
+          if (!isTransient(err)) allTransient = false;
+          console.warn(`gemini attempt (${model}) failed:`, String(err).slice(0, 200));
+          // A 4xx such as "model not found" won't fix itself; stop asking that model.
+          const status = (err as { status?: number })?.status;
+          if (status && !isTransient(err)) {
+            const at = models.indexOf(model);
+            if (at >= 0) models.splice(at, 1);
+          }
+          // Replace the failed attempt; pause briefly only after a whole round of failures.
+          const pause = models.length && failures % models.length === 0 ? Math.min(1500, Math.max(0, deadline - Date.now() - MIN_ATTEMPT_MS)) : 0;
+          setTimeout(launch, pause);
         },
-      });
-      const text = res.text;
-      if (!text) throw new Error("Empty response from Gemini");
-      return JSON.parse(text);
-    } catch (err) {
-      lastError = err;
-      if (!isTransient(err)) allTransient = false;
-      console.warn(`gemini attempt ${attempt + 1} (${model}) failed:`, String(err).slice(0, 200));
-      // A 4xx such as "model not found" won't fix itself; stop asking that model.
-      if ((err as { status?: number })?.status && !isTransient(err)) {
-        models.splice(models.indexOf(model), 1);
-        attempt--;
-        continue;
-      }
-      // Rotating models needs no wait; a full cycle of failures backs off 1s, 2s, 4s…
-      if ((attempt + 1) % models.length === 0) {
-        await sleep(Math.min(1000 * 2 ** (attempt / models.length), deadline - Date.now() - MIN_ATTEMPT_MS));
-      }
-    }
-  }
-  if (allTransient) throw new GeminiBusyError(`Gemini busy: ${String(lastError).slice(0, 200)}`);
-  throw lastError;
+      );
+      // Hedge: if this attempt is slow, bring in the next model alongside it.
+      clearTimeout(hedgeTimer);
+      hedgeTimer = setTimeout(launch, HEDGE_MS);
+    };
+
+    launch();
+  });
 }

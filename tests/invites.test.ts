@@ -30,6 +30,12 @@ describe("invitations per function", () => {
     expect(occ[1]).toMatchObject({ title: "Haldi", guests: 80, time: "11:30 AM" });
   });
 
+  it("only splits invitations by function for weddings", () => {
+    for (const eventType of ["birthday", "festival", "community", "corporate", "other"] as const) {
+      expect(occasionsFor({ ...input, eventType }, schedule).map((o) => o.key)).toEqual([MAIN_KEY]);
+    }
+  });
+
   it("only has the main card when there's a single function", () => {
     expect(occasionsFor(input, schedule.slice(0, 2)).map((o) => o.key)).toEqual([MAIN_KEY]);
   });
@@ -37,9 +43,17 @@ describe("invitations per function", () => {
   it("starts each card with a design that matches the function", () => {
     const occ = occasionsFor(input, schedule);
     expect(designFor("wedding", occ[1])).toEqual({ template: "toran", palette: "haldi" });
-    expect(designFor("wedding", occ[2])).toEqual({ template: "confetti", palette: "midnight" });
-    expect(designFor("wedding", occ[3])).toEqual({ template: "arch", palette: "maroon" });
-    expect(designFor("birthday")).toEqual({ template: "confetti", palette: "pastel" });
+    expect(designFor("wedding", occ[2])).toEqual({ template: "festive", palette: "midnight" });
+    expect(designFor("wedding", occ[3])).toEqual({ template: "royal", palette: "peach" });
+    expect(designFor("wedding", occ[0])).toEqual({ template: "royal", palette: "peach" });
+    expect(designFor("festival")).toEqual({ template: "festive", palette: "festive" });
+  });
+
+  it("gives kids' birthdays the party card and other birthdays the watercolour", () => {
+    expect(designFor("birthday", undefined, "Kids' party, Pure veg")).toEqual({ template: "party", palette: "candy" });
+    expect(designFor("birthday", undefined, "5th birthday")).toEqual({ template: "party", palette: "candy" });
+    expect(designFor("birthday", undefined, "60th, Surprise")).toEqual({ template: "watercolour", palette: "wash" });
+    expect(designFor("birthday")).toEqual({ template: "watercolour", palette: "wash" });
   });
 
   it("shows the function's own day and time, unless the host typed a time", () => {

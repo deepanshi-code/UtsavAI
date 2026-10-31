@@ -4,7 +4,7 @@ import { Download, ExternalLink, Eye, RotateCcw, Share2, Shuffle, Users, WandSpa
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import InviteCard, { PALETTES, svgToPng, TEMPLATES, type PaletteId, type TemplateId } from "@/components/invite/InviteCard";
+import InviteCard, { PALETTES, resolvePalette, resolveTemplate, svgToPng, TEMPLATES } from "@/components/invite/InviteCard";
 import { useToast } from "@/components/Toast";
 import { addDays, formatDate } from "@/lib/format";
 import {
@@ -28,9 +28,11 @@ const SHARED: (keyof InviteOptions)[] = ["hosts", "rsvp", "tone", "language"];
 
 /** Older saved invites kept date/venue inside "details" and had a separate message; drop both. */
 function migrate(invite: SavedInvite): SavedInvite {
-  if (!("whatsapp" in invite.text)) return invite;
+  // Designs and palettes from earlier versions map to their closest current ones.
+  const design = { template: resolveTemplate(invite.template), palette: resolvePalette(invite.palette) };
+  if (!("whatsapp" in invite.text)) return { ...invite, ...design };
   const { whatsapp: _old, ...text } = invite.text as InviteText & { whatsapp?: string };
-  return { ...invite, text: { ...text, details: "" } };
+  return { ...invite, ...design, text: { ...text, details: "" } };
 }
 
 /** Every occasion gets an invitation; new ones copy the shared details from the main card. */
@@ -40,7 +42,7 @@ function ensureInvites(p: SavedPlan, occasions: InviteOccasion[]): Record<string
   const base = existing[MAIN_KEY]?.options ?? { tone: "Warm", language: "English", hosts: "", venue: "", time: "", rsvp: "" };
   for (const occ of occasions) {
     if (existing[occ.key]) continue;
-    const { template, palette } = designFor(p.input.eventType, occ);
+    const { template, palette } = designFor(p.input.eventType, occ, `${p.input.preferences} ${p.input.milestone ?? ""}`);
     existing[occ.key] = {
       options: { ...base, time: "", venue: occ.key === MAIN_KEY ? base.venue : "" },
       text: defaultInvite(p.input, p.plan, occ),
@@ -318,7 +320,7 @@ export default function InvitePage() {
             <div className="row" style={{ marginTop: 16 }}>
               <button type="button" className="btn" onClick={() => patch(activeKey, (x) => ({ ...x, seed: newSeed() }))}><Shuffle size={16} aria-hidden="true" /> New pattern</button>
               {occ.key !== MAIN_KEY && (
-                <button type="button" className="btn btn-ghost" onClick={() => patch(activeKey, (x) => ({ ...x, ...designFor(saved.input.eventType, occ) }))}>
+                <button type="button" className="btn btn-ghost" onClick={() => patch(activeKey, (x) => ({ ...x, ...designFor(saved.input.eventType, occ, `${saved.input.preferences} ${saved.input.milestone ?? ""}`) }))}>
                   <RotateCcw size={15} aria-hidden="true" /> Match the {occ.title} theme
                 </button>
               )}
@@ -328,7 +330,7 @@ export default function InvitePage() {
 
         <div className="studio-preview">
           <div className="invite-frame">
-            <InviteCard ref={svgRef} template={inv.template as TemplateId} palette={inv.palette as PaletteId} seed={inv.seed} text={inv.text} facts={facts} />
+            <InviteCard ref={svgRef} template={inv.template} palette={inv.palette} seed={inv.seed} text={inv.text} facts={facts} />
           </div>
           <button type="button" className="btn btn-primary btn-lg" style={{ marginTop: 16, width: "100%" }} onClick={openPreview} disabled={rendering}>
             <Eye size={18} aria-hidden="true" /> {rendering ? "Preparing preview…" : "Preview & download"}
