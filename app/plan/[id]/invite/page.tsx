@@ -31,7 +31,8 @@ function migrate(invite: SavedInvite): SavedInvite {
   // Designs and palettes from earlier versions map to their closest current ones.
   const design = { template: resolveTemplate(invite.template), palette: resolvePalette(invite.palette) };
   if (!("whatsapp" in invite.text)) return { ...invite, ...design };
-  const { whatsapp: _old, ...text } = invite.text as InviteText & { whatsapp?: string };
+  const text: InviteText & { whatsapp?: unknown } = { ...invite.text };
+  delete text.whatsapp;
   return { ...invite, ...design, text: { ...text, details: "" } };
 }
 

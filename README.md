@@ -75,6 +75,19 @@ npm run dev                  # http://localhost:3000
 ```bash
 npm test          # 89 unit tests: budget maths, validation, prompts, normalisation, hedged model calls, rate limiting, multi-day schedule, venues, invitations, .ics, share links, progress
 npm run typecheck
+npm run lint      # ESLint (Next.js core-web-vitals + TypeScript rules), zero warnings allowed
+```
+
+GitHub Actions runs lint, typecheck, tests and a production build on every push.
+
+## Project layout
+```
+app/                    pages and API routes (plan, ideas, invite, places)
+components/plan/        plan dashboard and its tabs
+components/invite/      invitation card: catalog, fonts, layout engine, ornaments, PNG export
+components/invite/designs/  one file per card design
+lib/                    Gemini calls and prompts, validation, budget maths, storage, sharing
+tests/                  Vitest unit tests
 ```
 
 ## Deploy (Vercel)
@@ -83,4 +96,7 @@ npm run typecheck
 3. Add environment variable `GEMINI_API_KEY` → Deploy.
 
 ## Stack
-Next.js 15 (App Router) · React 19 · TypeScript · `@google/genai` (Gemini 3.5 Flash with 3.1 Flash-Lite fallback, structured output) · Lucide icons · Vitest
+Next.js 15 (App Router) · React 19 · TypeScript · `@google/genai` (a chain of Gemini Flash models with hedged requests, structured output) · Lucide icons · Vitest · ESLint
+
+## License
+MIT. The bundled fonts are under the SIL Open Font License 1.1 (see `public/fonts`).
