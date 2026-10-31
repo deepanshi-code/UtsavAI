@@ -232,6 +232,9 @@ function Leaf({ x, y, len, angle, fill }: { x: number; y: number; len: number; a
   return <path d={`M0 0 Q ${len * 0.5} ${-len * 0.28} ${len} 0 Q ${len * 0.5} ${len * 0.28} 0 0 Z`} fill={fill} transform={`translate(${x} ${y}) rotate(${angle})`} />;
 }
 
+/** Seeded choice, so "New pattern" gives each design a visibly different variation. */
+const pick = <T,>(r: () => number, options: readonly T[]): T => options[Math.floor(r() * options.length) % options.length];
+
 /* ───────────────────────── Designs ───────────────────────── */
 
 interface DesignProps {
@@ -246,8 +249,12 @@ interface DesignProps {
 /** Palace arch with columns, a floral monogram wreath and lush florals at the base. */
 function Royal({ p, r, text, facts, uid }: DesignProps) {
   const d = dateParts(facts.iso);
-  const leafGreen = "#6f8f5e";
-  const bloom = [p.accent2, "#f4b6c2", "#e98aa0", "#f7d9a8"];
+  const leafGreen = pick(r, ["#6f8f5e", "#557a5a", "#8a9a5b"]);
+  const bloom = pick(r, [
+    [p.accent2, "#f4b6c2", "#e98aa0", "#f7d9a8"], // blush pinks
+    ["#ffffff", "#f7e1c8", "#f2c2a0", "#e9b7c3"], // ivory and peach
+    ["#c43b4b", "#e8737f", "#f4b6c2", "#ffd7a8"], // red roses
+  ]);
   const cluster = (cx: number, cy: number, dir: number) =>
     Array.from({ length: 14 }, (_, i) => {
       const x = cx + dir * r() * 230;
@@ -317,6 +324,9 @@ function Royal({ p, r, text, facts, uid }: DesignProps) {
 
 /** Symmetrical vine arch of leaves and small white flowers on a muted ground. */
 function Botanical({ p, r, text, facts }: DesignProps) {
+  // Variation per seed: flower colour and how densely flowers sit on the vine.
+  const bloom = pick(r, [p.accent2, "#ffffff", "#f6c9d2", "#f9e3a6"]);
+  const every = pick(r, [2, 3, 4]);
   const vine = (dir: 1 | -1) => {
     // Leaves and the stem share the same points, so the leaves sit on the vine.
     const pts = Array.from({ length: 22 }, (_, i) => {
@@ -331,7 +341,7 @@ function Botanical({ p, r, text, facts }: DesignProps) {
           <g key={i}>
             <Leaf x={x} y={y} len={46 + r() * 22} angle={dir > 0 ? -40 + r() * 30 : 220 - r() * 30} fill={p.accent} />
             <Leaf x={x} y={y} len={40 + r() * 20} angle={dir > 0 ? 30 + r() * 30 : 150 - r() * 30} fill={p.accent} />
-            {i % 3 === 1 && <Flower x={x + dir * (r() * 30)} y={y} size={20 + r() * 6} fill={p.accent2} centre="#e7c46a" rot={r() * 72} />}
+            {i % every === 1 && <Flower x={x + dir * (r() * 30)} y={y} size={20 + r() * 6} fill={bloom} centre="#e7c46a" rot={r() * 72} />}
           </g>
         ))}
       </g>
@@ -374,7 +384,18 @@ function Botanical({ p, r, text, facts }: DesignProps) {
 
 /** Hanging lanterns, bunting, a diya, fireworks and a diya border; venue in a highlighted box. */
 function Festive({ p, r, text, facts }: DesignProps) {
-  const flagColours = ["#f6c445", "#ff8a3d", "#2fb37a", "#3d8bff", "#e8457a"];
+  // Variation per seed: bunting order, lantern colour and where the fireworks burst.
+  const flagBase = ["#f6c445", "#ff8a3d", "#2fb37a", "#3d8bff", "#e8457a"];
+  const shift = Math.floor(r() * flagBase.length);
+  const flagColours = flagBase.map((_, i) => flagBase[(i + shift) % flagBase.length]);
+  const lanternColour = pick(r, [p.accent2, "#ff6f91", "#4fc3f7", "#ffd54f"]);
+  const burstColours = [p.accent, p.accent2, "#ff7ab6", "#7fd1c4"];
+  const bursts = Array.from({ length: 4 + Math.floor(r() * 3) }, (_, i) => ({
+    x: i % 2 ? CARD_W - 110 - r() * 120 : 110 + r() * 120,
+    y: 260 + r() * 720,
+    s: 60 + r() * 60,
+    c: pick(r, burstColours),
+  }));
   const burst = (x: number, y: number, s: number, c: string) => (
     <g opacity={0.55}>
       {Array.from({ length: 16 }, (_, i) => {
@@ -390,7 +411,7 @@ function Festive({ p, r, text, facts }: DesignProps) {
   const lantern = (x: number, len: number) => (
     <g>
       <line x1={x} y1={0} x2={x} y2={len} stroke={p.accent} strokeWidth={2} />
-      <path d={`M${x - 34} ${len + 18} L${x} ${len} L${x + 34} ${len + 18} L${x + 26} ${len + 96} L${x - 26} ${len + 96} Z`} fill={p.accent2} />
+      <path d={`M${x - 34} ${len + 18} L${x} ${len} L${x + 34} ${len + 18} L${x + 26} ${len + 96} L${x - 26} ${len + 96} Z`} fill={lanternColour} />
       <path d={`M${x - 34} ${len + 18} L${x + 34} ${len + 18}`} stroke={p.accent} strokeWidth={6} />
       <rect x={x - 26} y={len + 50} width={52} height={10} fill={p.accent} />
       {[-14, -5, 5, 14].map((dx) => <line key={dx} x1={x + dx} y1={len + 96} x2={x + dx * 1.3} y2={len + 150} stroke={p.accent} strokeWidth={3} />)}
@@ -406,10 +427,7 @@ function Festive({ p, r, text, facts }: DesignProps) {
   );
   return (
     <>
-      {burst(170, 320, 90, p.accent)}
-      {burst(CARD_W - 170, 360, 110, p.accent2)}
-      {burst(140, 900, 70, p.accent2)}
-      {burst(CARD_W - 150, 860, 80, p.accent)}
+      {bursts.map((b, i) => <g key={i}>{burst(b.x, b.y, b.s, b.c)}</g>)}
       {/* bunting */}
       <path d={`M0 30 Q${CX} 110 ${CARD_W} 30`} fill="none" stroke={p.accent} strokeWidth={2} />
       {Array.from({ length: 13 }, (_, i) => {
@@ -511,6 +529,9 @@ function Watercolour({ p, r, text, facts, uid }: DesignProps) {
 /** Bright party card: hats, stars, streamers, a cloud badge and a three-column info bar. */
 function Party({ p, r, text, facts }: DesignProps) {
   const d = dateParts(facts.iso);
+  // Variation per seed: hat colours and streamer colours.
+  const hats = pick(r, [["#d6403d", "#2e9e53"], ["#7e57c2", "#ffb300"], ["#1e88e5", "#e91e63"], ["#00897b", "#f4511e"]]);
+  const streamers = pick(r, [["#e0b33a", "#2e9e53", "#d6403d"], ["#e91e63", "#1e88e5", "#ffb300"], ["#7e57c2", "#00897b", "#f4511e"]]);
   const star = (x: number, y: number, s: number) => (
     <path d={Array.from({ length: 10 }, (_, i) => { const a = (i * Math.PI) / 5 - Math.PI / 2; const rr = i % 2 ? s * 0.45 : s; return `${i ? "L" : "M"}${x + Math.cos(a) * rr} ${y + Math.sin(a) * rr}`; }).join(" ") + "Z"} fill="#ffe066" stroke="#f4b740" strokeWidth={2} />
   );
@@ -525,13 +546,13 @@ function Party({ p, r, text, facts }: DesignProps) {
   const cloud = "M260 560 q-90 0 -90 -80 q0 -70 80 -80 q10 -90 110 -90 q60 -60 140 -30 q70 -50 150 10 q100 -10 120 80 q90 20 80 100 q0 70 -90 70 Z";
   return (
     <>
-      {hat(250, 250, -28, "#d6403d")}
-      {hat(CARD_W - 240, 250, 26, "#2e9e53")}
-      {streamer(170, 360, "#e0b33a")}
-      {streamer(CARD_W - 170, 380, "#2e9e53")}
-      {streamer(240, 640, "#d6403d")}
-      {streamer(CARD_W - 250, 650, "#e0b33a")}
-      {[[230, 200], [CARD_W - 230, 200], [140, 520], [CARD_W - 140, 520], [330, 720], [CARD_W - 330, 720]].map(([x, y], i) => <g key={i}>{star(x, y, 26 + r() * 10)}</g>)}
+      {hat(250, 250, -28, hats[0])}
+      {hat(CARD_W - 240, 250, 26, hats[1])}
+      {streamer(170, 360, streamers[0])}
+      {streamer(CARD_W - 170, 380, streamers[1])}
+      {streamer(240, 640, streamers[2])}
+      {streamer(CARD_W - 250, 650, streamers[0])}
+      {[[230, 200], [CARD_W - 230, 200], [140, 520], [CARD_W - 140, 520], [330, 720], [CARD_W - 330, 720]].map(([x, y], i) => <g key={i}>{star(x + (r() - 0.5) * 80, y + (r() - 0.5) * 60, 22 + r() * 16)}</g>)}
       {Array.from({ length: 18 }, (_, i) => <circle key={i} cx={260 + r() * 560} cy={700 + r() * 60} r={7} fill="#e04f86" opacity={0.8} />)}
       {/* The cloud outline spans x≈170–850, so shift it to centre on the card. */}
       <g transform="translate(30 40)">
@@ -605,14 +626,17 @@ function Mandala({ p, r, text, facts }: DesignProps) {
 }
 
 function Toran({ p, r, text, facts }: DesignProps) {
-  const n = 9;
+  // Variation per seed: number of strands, how deep the garland dips, bead colours.
+  const n = 7 + Math.floor(r() * 5);
+  const dip = 30 + r() * 70;
+  const beads = pick(r, [[p.accent, p.accent2], ["#ff9f1c", "#ffd166"], ["#e63946", "#ffd166"], [p.accent2, "#ffffff"]]);
   const els: React.ReactNode[] = [];
   for (let i = 0; i < n; i++) {
     const x = 60 + (i * (CARD_W - 120)) / (n - 1);
-    const sag = Math.sin((i / (n - 1)) * Math.PI) * 60;
+    const sag = Math.sin((i / (n - 1)) * Math.PI) * dip;
     const len = 90 + r() * 140;
     els.push(<line key={`s${i}`} x1={x} y1={40 + sag} x2={x} y2={40 + sag + len} stroke={p.accent} strokeWidth={2} />);
-    for (let b = 0; b < Math.floor(len / 34); b++) els.push(<circle key={`b${i}-${b}`} cx={x} cy={60 + sag + b * 34} r={13} fill={b % 2 ? p.accent : p.accent2} />);
+    for (let b = 0; b < Math.floor(len / 34); b++) els.push(<circle key={`b${i}-${b}`} cx={x} cy={60 + sag + b * 34} r={13} fill={beads[b % 2]} />);
     els.push(<path key={`l${i}`} d={`M${x} ${40 + sag + len} q14 18 0 40 q-14 -22 0 -40Z`} fill="#4f9d69" opacity={0.9} />);
   }
   return (

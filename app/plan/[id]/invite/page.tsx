@@ -318,7 +318,7 @@ export default function InvitePage() {
               ))}
             </div>
             <div className="row" style={{ marginTop: 16 }}>
-              <button type="button" className="btn" onClick={() => patch(activeKey, (x) => ({ ...x, seed: newSeed() }))}><Shuffle size={16} aria-hidden="true" /> New pattern</button>
+              <button type="button" className="btn" onClick={() => { patch(activeKey, (x) => ({ ...x, seed: newSeed() })); toast("New pattern applied.", "success"); }}><Shuffle size={16} aria-hidden="true" /> New pattern</button>
               {occ.key !== MAIN_KEY && (
                 <button type="button" className="btn btn-ghost" onClick={() => patch(activeKey, (x) => ({ ...x, ...designFor(saved.input.eventType, occ, `${saved.input.preferences} ${saved.input.milestone ?? ""}`) }))}>
                   <RotateCcw size={15} aria-hidden="true" /> Match the {occ.title} theme
